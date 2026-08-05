@@ -406,6 +406,8 @@ function Library.new(data)
 		Size = UDim2.fromOffset(760, 500),
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
+		Active = true, -- Consumes mouse/touch input inside the UI.
+		Selectable = true,
 	})
 	bindTheme(self, main, "BackgroundColor3", "Background")
 	main.BackgroundTransparency = 0.055
@@ -414,6 +416,22 @@ function Library.new(data)
 	local startupScale = create("UIScale", {
 		Parent = main,
 		Scale = 1,
+	})
+
+	-- Invisible input catcher prevents clicks on empty UI space from reaching
+	-- ClickDetectors, tools, camera controls, or other gameplay input.
+	local inputCatcher = create("TextButton", {
+		Name = "InputCatcher",
+		Parent = main,
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Text = "",
+		AutoButtonColor = false,
+		Active = true,
+		Selectable = false,
+		ZIndex = 0,
+		Active = false,
 	})
 
 	local backgroundImage = create("ImageLabel", {
@@ -577,17 +595,6 @@ function Library.new(data)
 	})
 	refreshCanvas(pageButtons, pageLayout, 10)
 
-	-- Divider above the local player profile card
-	local playerProfileDivider = create("Frame", {
-		Name = "PlayerProfileDivider",
-		Parent = sidebar,
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 12, 1, -74),
-		Size = UDim2.new(1, -24, 0, 1),
-		BorderSizePixel = 0,
-	})
-	bindTheme(self, playerProfileDivider, "BackgroundColor3", "Stroke")
-	playerProfileDivider.BackgroundTransparency = 0.35
 
 	-- Local player profile card fixed at the bottom of the sidebar
 	local playerProfile = create("Frame", {
