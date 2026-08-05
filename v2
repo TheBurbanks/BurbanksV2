@@ -78,6 +78,17 @@ local function create(className, properties)
 	return object
 end
 
+local function normalizeAssetId(value)
+	if value == nil then return "" end
+	local text = tostring(value):match("^%s*(.-)%s*$")
+	if text == "" then return "" end
+	if text:match("^rbxassetid://") or text:match("^https?://") then
+		return text
+	end
+	local id = text:match("(%d+)")
+	return id and ("rbxassetid://" .. id) or ""
+end
+
 local function corner(object, radius)
 	return create("UICorner", {
 		Parent = object,
@@ -171,8 +182,8 @@ local function makeDraggable(handle, target)
 	local settleTween
 
 	-- Higher values feel more responsive; lower values feel softer and floatier.
-	local DRAG_SMOOTHNESS = 17
-	local PICKUP_PIXELS = 3
+	local DRAG_SMOOTHNESS = 22
+	local PICKUP_PIXELS = 4
 
 	handle.Active = true
 
@@ -355,6 +366,10 @@ function Library.new(data)
 
 	self.title = tostring(data.title or data.Title or "BURBANKS")
 	self.subtitle = tostring(data.subtitle or data.Subtitle or "PRIVATE BUILD")
+	self.logoTextValue = tostring(data.logoText or data.LogoText or "N")
+	self.logoImageValue = normalizeAssetId(data.logo or data.Logo or data.logoImage or data.LogoImage)
+	self.backgroundImageValue = normalizeAssetId(data.background or data.Background or data.backgroundImage or data.BackgroundImage)
+	self.backgroundTransparency = math.clamp(tonumber(data.backgroundTransparency or data.BackgroundTransparency) or 0.35, 0, 1)
 	self.theme = copyTable(NL_THEME)
 	self.pages = {}
 	self.focusedPage = nil
@@ -394,6 +409,18 @@ function Library.new(data)
 	main.BackgroundTransparency = 0.055
 	corner(main, 14)
 
+	local backgroundImage = create("ImageLabel", {
+		Name = "BackgroundImage",
+		Parent = main,
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Image = self.backgroundImageValue,
+		ImageTransparency = self.backgroundTransparency,
+		ScaleType = Enum.ScaleType.Crop,
+		Visible = self.backgroundImageValue ~= "",
+		ZIndex = 0,
+	})
+
 	local mainStroke = stroke(main, self.theme.Stroke, 0.5, 1)
 	bindTheme(self, mainStroke, "Color", "Stroke")
 
@@ -417,7 +444,7 @@ function Library.new(data)
 	bindTheme(self, accentLine, "BackgroundColor3", "Stroke")
 	accentLine.BackgroundTransparency = 0.5
 
-	-- Logo
+	-- Logo (text fallback or client-provided asset ID)
 	local logoBox = create("Frame", {
 		Parent = topbar,
 		Position = UDim2.fromOffset(12, 8),
@@ -427,10 +454,22 @@ function Library.new(data)
 	bindTheme(self, logoBox, "BackgroundColor3", "Accent")
 	corner(logoBox, 8)
 
-	local logoText = createLabel(self, logoBox, "N", 16, Enum.Font.GothamBold)
+	local logoImage = create("ImageLabel", {
+		Name = "LogoImage",
+		Parent = logoBox,
+		Position = UDim2.fromOffset(3, 3),
+		Size = UDim2.new(1, -6, 1, -6),
+		BackgroundTransparency = 1,
+		Image = self.logoImageValue,
+		ScaleType = Enum.ScaleType.Fit,
+		Visible = self.logoImageValue ~= "",
+	})
+
+	local logoText = createLabel(self, logoBox, self.logoTextValue, 16, Enum.Font.GothamBold)
 	logoText.Size = UDim2.fromScale(1, 1)
 	logoText.TextXAlignment = Enum.TextXAlignment.Center
 	logoText.TextColor3 = Color3.fromRGB(4, 12, 18)
+	logoText.Visible = self.logoImageValue == ""
 
 	local titleLabel = createLabel(self, topbar, self.title, 16, Enum.Font.GothamBold)
 	titleLabel.Position = UDim2.fromOffset(56, 6)
@@ -571,6 +610,10 @@ function Library.new(data)
 	self.topbar = topbar
 	self.titleLabel = titleLabel
 	self.subtitleLabel = subtitleLabel
+	self.logoBox = logoBox
+	self.logoText = logoText
+	self.logoImage = logoImage
+	self.backgroundImage = backgroundImage
 	self.pagesContainer = pageButtons
 	self.content = content
 	self.openPosition = main.Position
@@ -592,6 +635,49 @@ end
 function Library:Create(data)
 	return Library.new(data or {})
 end
+
+function Library:setLogo(assetId, fallbackText)
+	local image = normalizeAssetId(assetId)
+	self.logoImageValue = image
+	if fallbackText ~= nil then
+		self.logoTextValue = tostring(fallbackText)
+		self.logoText.Text = self.logoTextValue
+	end
+	self.logoImage.Image = image
+	self.logoImage.Visible = image ~= ""
+	self.logoText.Visible = image == ""
+	return image ~= ""
+end
+Library.SetLogo = Library.setLogo
+
+function Library:setLogoText(text)
+	self.logoTextValue = tostring(text or "N")
+	self.logoText.Text = self.logoTextValue
+	if self.logoImageValue == "" then
+		self.logoText.Visible = true
+	end
+	return self
+end
+Library.SetLogoText = Library.setLogoText
+
+function Library:setBackground(assetId, transparency)
+	local image = normalizeAssetId(assetId)
+	self.backgroundImageValue = image
+	self.backgroundImage.Image = image
+	self.backgroundImage.Visible = image ~= ""
+	if transparency ~= nil then
+		self:setBackgroundTransparency(transparency)
+	end
+	return image ~= ""
+end
+Library.SetBackground = Library.setBackground
+
+function Library:setBackgroundTransparency(value)
+	self.backgroundTransparency = math.clamp(tonumber(value) or self.backgroundTransparency or 0.35, 0, 1)
+	self.backgroundImage.ImageTransparency = self.backgroundTransparency
+	return self
+end
+Library.SetBackgroundTransparency = Library.setBackgroundTransparency
 
 function Library:setTitle(title)
 	self.title = tostring(title or "BURBANKS")
