@@ -609,7 +609,7 @@ function Library.new(data)
 	local usernameLabel = createLabel(
 		self,
 		playerProfile,
-		"@" .. LocalPlayer.Name,
+		"" .. LocalPlayer.Name,
 		13,
 		Enum.Font.GothamBold
 	)
