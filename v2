@@ -556,7 +556,7 @@ function Library.new(data)
 	local pageButtons = create("ScrollingFrame", {
 		Parent = sidebar,
 		Position = UDim2.fromOffset(10, 40),
-		Size = UDim2.new(1, -20, 1, -60),
+		Size = UDim2.new(1, -20, 1, -126),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		CanvasSize = UDim2.new(),
@@ -569,6 +569,79 @@ function Library.new(data)
 		Padding = UDim.new(0, 5),
 	})
 	refreshCanvas(pageButtons, pageLayout, 10)
+
+	-- Local player profile card fixed at the bottom of the sidebar
+	local playerProfile = create("Frame", {
+		Name = "PlayerProfile",
+		Parent = sidebar,
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 10, 1, -10),
+		Size = UDim2.new(1, -20, 0, 58),
+		BorderSizePixel = 0,
+	})
+	bindTheme(self, playerProfile, "BackgroundColor3", "Card")
+	playerProfile.BackgroundTransparency = 0.45
+	corner(playerProfile, 9)
+
+	local playerProfileStroke = stroke(playerProfile, self.theme.Stroke, 0.5, 1)
+	bindTheme(self, playerProfileStroke, "Color", "Stroke")
+
+	local avatarHolder = create("Frame", {
+		Parent = playerProfile,
+		Position = UDim2.fromOffset(8, 8),
+		Size = UDim2.fromOffset(42, 42),
+		BorderSizePixel = 0,
+	})
+	bindTheme(self, avatarHolder, "BackgroundColor3", "Background2")
+	corner(avatarHolder, 21)
+
+	local avatar = create("ImageLabel", {
+		Name = "Avatar",
+		Parent = avatarHolder,
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Image = "",
+		ScaleType = Enum.ScaleType.Crop,
+	})
+	corner(avatar, 21)
+
+	local usernameLabel = createLabel(
+		self,
+		playerProfile,
+		"@" .. LocalPlayer.Name,
+		11,
+		Enum.Font.GothamBold
+	)
+	usernameLabel.Position = UDim2.fromOffset(58, 8)
+	usernameLabel.Size = UDim2.new(1, -66, 0, 20)
+	usernameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+
+	local displayNameLabel = createLabel(
+		self,
+		playerProfile,
+		LocalPlayer.DisplayName,
+		9,
+		Enum.Font.GothamMedium
+	)
+	displayNameLabel.Position = UDim2.fromOffset(58, 28)
+	displayNameLabel.Size = UDim2.new(1, -66, 0, 18)
+	displayNameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	bindTheme(self, displayNameLabel, "TextColor3", "Muted")
+	displayNameLabel.TextTransparency = 0.35
+
+	task.spawn(function()
+		local success, thumbnail = pcall(function()
+			return Players:GetUserThumbnailAsync(
+				LocalPlayer.UserId,
+				Enum.ThumbnailType.HeadShot,
+				Enum.ThumbnailSize.Size150x150
+			)
+		end)
+
+		if success and avatar.Parent then
+			avatar.Image = thumbnail
+		end
+	end)
 
 	-- Content area
 	local content = create("Frame", {
