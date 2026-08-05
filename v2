@@ -1677,6 +1677,8 @@ function Section:addTextbox(data)
 	local holderStroke = stroke(holder, self.library.theme.Stroke, 0.5, 1)
 	bindTheme(self.library, holderStroke, "Color", "Stroke")
 
+	local placeholderText = tostring(data.placeholder or data.Placeholder or "TYPE HERE...")
+
 	local textbox = create("TextBox", {
 		Parent = holder,
 		Position = UDim2.fromOffset(8, 0),
@@ -1685,7 +1687,7 @@ function Section:addTextbox(data)
 		ClearTextOnFocus = false,
 		Font = Enum.Font.GothamMedium,
 		Text = options.default,
-		PlaceholderText = tostring(data.placeholder or data.Placeholder or "TYPE HERE..."),
+		PlaceholderText = placeholderText,
 		TextSize = 10,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
@@ -1870,7 +1872,15 @@ function Section:addTextbox(data)
 		updatePlayerPreview(textbox.Text)
 	end)
 
+	textbox.Focused:Connect(function()
+		textbox.PlaceholderText = ""
+	end)
+
 	textbox.FocusLost:Connect(function(enterPressed)
+		if textbox.Text == "" then
+			textbox.PlaceholderText = placeholderText
+		end
+
 		options.default = textbox.Text
 		safeCall(options.callback, textbox.Text, true, enterPressed)
 		updatePlayerPreview(textbox.Text)
