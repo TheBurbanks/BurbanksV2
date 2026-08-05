@@ -1651,15 +1651,22 @@ function Section:addTextbox(data)
 		title = tostring(data.title or data.Title or "TEXTBOX"),
 		default = tostring(data.default or ""),
 		callback = data.callback or data.Callback or function() end,
+		playerPreview = data.playerPreview == true or data.PlayerPreview == true,
+		previewDelay = tonumber(data.previewDelay or data.PreviewDelay) or 0.45,
+		previewCallback = data.previewCallback or data.PreviewCallback,
 	}
 
-	local module = createBoxedModule(self, 38)
+	local collapsedHeight = 38
+	local expandedHeight = 116
+	local module = createBoxedModule(self, collapsedHeight)
+	module.ClipsDescendants = true
+
 	local title = createBoxedTitle(self, module, options.title, 170)
 
 	local holder = create("Frame", {
 		Parent = module,
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -10, 0.5, 0),
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -10, 0, 7),
 		Size = UDim2.fromOffset(150, 24),
 		BorderSizePixel = 0,
 	})
@@ -1678,7 +1685,7 @@ function Section:addTextbox(data)
 		ClearTextOnFocus = false,
 		Font = Enum.Font.GothamMedium,
 		Text = options.default,
-		PlaceholderText = "TYPE HERE...",
+		PlaceholderText = tostring(data.placeholder or data.Placeholder or "TYPE HERE..."),
 		TextSize = 10,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
@@ -1686,28 +1693,208 @@ function Section:addTextbox(data)
 	bindTheme(self.library, textbox, "PlaceholderColor3", "Muted")
 	textbox.TextTransparency = 0.35
 
+	local preview
+	local avatar
+	local previewName
+	local previewStats
+	local previewRequest = 0
+
+	if options.playerPreview then
+		preview = create("Frame", {
+			Name = "PlayerPreview",
+			Parent = module,
+			Position = UDim2.fromOffset(10, 40),
+			Size = UDim2.new(1, -20, 0, 66),
+			BorderSizePixel = 0,
+			Visible = false,
+		})
+		bindTheme(self.library, preview, "BackgroundColor3", "Background2")
+		preview.BackgroundTransparency = 0.15
+		corner(preview, 8)
+
+		local previewStroke = stroke(preview, self.library.theme.Stroke, 0.45, 1)
+		bindTheme(self.library, previewStroke, "Color", "Stroke")
+
+		avatar = create("ImageLabel", {
+			Name = "Avatar",
+			Parent = preview,
+			Position = UDim2.fromOffset(8, 8),
+			Size = UDim2.fromOffset(50, 50),
+			BackgroundTransparency = 1,
+			Image = "",
+			ScaleType = Enum.ScaleType.Crop,
+		})
+		corner(avatar, 25)
+
+		previewName = createLabel(self.library, preview, "Searching...", 11, Enum.Font.GothamBold)
+		previewName.Position = UDim2.fromOffset(66, 7)
+		previewName.Size = UDim2.new(1, -74, 0, 18)
+		previewName.TextTruncate = Enum.TextTruncate.AtEnd
+
+		previewStats = createLabel(self.library, preview, "", 9, Enum.Font.GothamMedium)
+		previewStats.Position = UDim2.fromOffset(66, 25)
+		previewStats.Size = UDim2.new(1, -74, 0, 34)
+		previewStats.TextWrapped = true
+		previewStats.TextYAlignment = Enum.TextYAlignment.Top
+		bindTheme(self.library, previewStats, "TextColor3", "Muted")
+		previewStats.TextTransparency = 0.3
+	end
+
+	local function setPreviewVisible(visible)
+		if not preview then return end
+		preview.Visible = visible
+		tween(module, 0.16, {
+			Size = UDim2.new(1, 0, 0, visible and expandedHeight or collapsedHeight),
+		})
+	end
+
+	local function findServerPlayer(name)
+		local lowered = string.lower(name)
+		for _, player in ipairs(Players:GetPlayers()) do
+			if string.lower(player.Name) == lowered
+				or string.lower(player.DisplayName) == lowered then
+				return player
+			end
+		end
+		return nil
+	end
+
+	local function buildServerStats(player)
+		local parts = {
+			"ID: " .. tostring(player.UserId),
+			"Age: " .. tostring(player.AccountAge) .. "d",
+		}
+
+		if player.Team then
+			parts[#parts + 1] = "Team: " .. player.Team.Name
+		end
+
+		local character = player.Character
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		local targetRoot = character and character:FindFirstChild("HumanoidRootPart")
+		local localCharacter = LocalPlayer.Character
+		local localRoot = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+
+		if humanoid then
+			parts[#parts + 1] = ("HP: %d/%d"):format(
+				math.floor(humanoid.Health + 0.5),
+				math.floor(humanoid.MaxHealth + 0.5)
+			)
+		end
+
+		if targetRoot and localRoot then
+			parts[#parts + 1] = ("Distance: %d studs"):format(
+				math.floor((targetRoot.Position - localRoot.Position).Magnitude + 0.5)
+			)
+		end
+
+		return table.concat(parts, "  •  ")
+	end
+
+	local function updatePlayerPreview(rawText)
+		if not options.playerPreview then return end
+
+		previewRequest += 1
+		local requestId = previewRequest
+		local query = tostring(rawText or ""):match("^%s*(.-)%s*$")
+
+		if query == "" then
+			setPreviewVisible(false)
+			return
+		end
+
+		setPreviewVisible(true)
+		avatar.Image = ""
+		previewName.Text = "Searching..."
+		previewStats.Text = "Looking up @" .. query
+
+		task.delay(options.previewDelay, function()
+			if requestId ~= previewRequest or not preview.Parent then return end
+
+			local serverPlayer = findServerPlayer(query)
+			local userId
+			local username = query
+			local displayName = query
+
+			if serverPlayer then
+				userId = serverPlayer.UserId
+				username = serverPlayer.Name
+				displayName = serverPlayer.DisplayName
+			else
+				local success, result = pcall(function()
+					return Players:GetUserIdFromNameAsync(query)
+				end)
+
+				if not success or requestId ~= previewRequest then
+					previewName.Text = "Player not found"
+					previewStats.Text = "Check the username and try again."
+					avatar.Image = ""
+					return
+				end
+
+				userId = result
+			end
+
+			local thumbSuccess, thumbnail = pcall(function()
+				return Players:GetUserThumbnailAsync(
+					userId,
+					Enum.ThumbnailType.HeadShot,
+					Enum.ThumbnailSize.Size150x150
+				)
+			end)
+
+			if requestId ~= previewRequest then return end
+
+			if thumbSuccess then
+				avatar.Image = thumbnail
+			end
+
+			previewName.Text = displayName .. "  @" .. username
+			previewStats.Text = serverPlayer
+				and buildServerStats(serverPlayer)
+				or ("ID: %d  •  Not in this server"):format(userId)
+
+			safeCall(options.previewCallback, {
+				player = serverPlayer,
+				userId = userId,
+				username = username,
+				displayName = displayName,
+				thumbnail = thumbSuccess and thumbnail or nil,
+			})
+		end)
+	end
+
 	textbox:GetPropertyChangedSignal("Text"):Connect(function()
 		options.default = textbox.Text
 		safeCall(options.callback, textbox.Text, false)
+		updatePlayerPreview(textbox.Text)
 	end)
 
 	textbox.FocusLost:Connect(function(enterPressed)
 		options.default = textbox.Text
 		safeCall(options.callback, textbox.Text, true, enterPressed)
+		updatePlayerPreview(textbox.Text)
 	end)
 
 	local controller = {
 		Instance = module,
 		Options = options,
 		Textbox = textbox,
+		Preview = preview,
 	}
 
 	function controller:Set(value, callCallback)
 		options.default = tostring(value or "")
 		textbox.Text = options.default
+		updatePlayerPreview(options.default)
 		if callCallback ~= false then
 			safeCall(options.callback, options.default, true)
 		end
+		return self
+	end
+
+	function controller:RefreshPreview()
+		updatePlayerPreview(textbox.Text)
 		return self
 	end
 
@@ -1723,7 +1910,14 @@ function Section:addTextbox(data)
 		if typeof(newOptions.callback) == "function" then
 			options.callback = newOptions.callback
 		end
+		if typeof(newOptions.previewCallback) == "function" then
+			options.previewCallback = newOptions.previewCallback
+		end
 		return self
+	end
+
+	if options.playerPreview and options.default ~= "" then
+		updatePlayerPreview(options.default)
 	end
 
 	self.modules[#self.modules + 1] = controller
