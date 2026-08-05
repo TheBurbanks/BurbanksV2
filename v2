@@ -159,23 +159,75 @@ end
 
 local function makeDraggable(handle, target)
 	target = target or handle
+
+	local RunService = game:GetService("RunService")
 	local dragging = false
+	local dragInput
 	local startMouse
 	local startPosition
+	local desiredPosition = target.Position
+	local restingSize = target.Size
+	local sizeTween
+	local settleTween
+
+	-- Higher values feel more responsive; lower values feel softer and floatier.
+	local DRAG_SMOOTHNESS = 22
+	local PICKUP_PIXELS = 4
 
 	handle.Active = true
 
+	local function cancelTween(animation)
+		if animation then
+			animation:Cancel()
+		end
+	end
+
 	handle.InputBegan:Connect(function(inputObject)
-		if inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+		local inputType = inputObject.UserInputType
+		if inputType ~= Enum.UserInputType.MouseButton1
+			and inputType ~= Enum.UserInputType.Touch then
+			return
+		end
+
 		dragging = true
+		dragInput = inputObject
 		startMouse = inputObject.Position
 		startPosition = target.Position
+		desiredPosition = target.Position
+		restingSize = target.Size
+
+		cancelTween(sizeTween)
+		cancelTween(settleTween)
+
+		-- Subtle pickup animation when the window is grabbed.
+		sizeTween = tween(
+			target,
+			0.12,
+			{
+				Size = UDim2.new(
+					restingSize.X.Scale,
+					restingSize.X.Offset + PICKUP_PIXELS,
+					restingSize.Y.Scale,
+					restingSize.Y.Offset + PICKUP_PIXELS
+				)
+			},
+			Enum.EasingStyle.Quart,
+			Enum.EasingDirection.Out
+		)
 	end)
 
 	UserInputService.InputChanged:Connect(function(inputObject)
-		if not dragging or inputObject.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+		if not dragging then return end
+
+		local validMouse = inputObject.UserInputType == Enum.UserInputType.MouseMovement
+		local validTouch = dragInput
+			and dragInput.UserInputType == Enum.UserInputType.Touch
+			and inputObject == dragInput
+
+		if not validMouse and not validTouch then return end
+
 		local delta = inputObject.Position - startMouse
-		target.Position = UDim2.new(
+		desiredPosition = UDim2.new(
 			startPosition.X.Scale,
 			startPosition.X.Offset + delta.X,
 			startPosition.Y.Scale,
@@ -183,10 +235,43 @@ local function makeDraggable(handle, target)
 		)
 	end)
 
+	RunService.RenderStepped:Connect(function(deltaTime)
+		if not dragging then return end
+
+		-- Frame-rate-independent easing toward the cursor.
+		local alpha = 1 - math.exp(-DRAG_SMOOTHNESS * deltaTime)
+		target.Position = target.Position:Lerp(desiredPosition, alpha)
+	end)
+
 	UserInputService.InputEnded:Connect(function(inputObject)
-		if inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = false
-		end
+		local endedMouse = inputObject.UserInputType == Enum.UserInputType.MouseButton1
+		local endedTouch = dragInput and inputObject == dragInput
+
+		if not dragging or (not endedMouse and not endedTouch) then return end
+
+		dragging = false
+		dragInput = nil
+
+		cancelTween(sizeTween)
+		cancelTween(settleTween)
+
+		-- Gently settle into the final cursor position.
+		settleTween = tween(
+			target,
+			0.14,
+			{Position = desiredPosition},
+			Enum.EasingStyle.Quart,
+			Enum.EasingDirection.Out
+		)
+
+		-- Return to the original size after release.
+		sizeTween = tween(
+			target,
+			0.16,
+			{Size = restingSize},
+			Enum.EasingStyle.Back,
+			Enum.EasingDirection.Out
+		)
 	end)
 end
 
