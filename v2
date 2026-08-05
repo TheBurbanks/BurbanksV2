@@ -62,6 +62,95 @@ local NL_THEME = {
 	Danger = Color3.fromRGB(255, 88, 105),
 }
 
+-- Built-in selectable theme presets.
+-- The original/current appearance is preserved as "Walled Waves".
+local THEME_PRESETS = {
+	["Walled Waves"] = {
+		Background = Color3.fromRGB(8, 8, 13),
+		Background2 = Color3.fromRGB(13, 17, 22),
+		Sidebar = Color3.fromRGB(8, 8, 13),
+		Topbar = Color3.fromRGB(8, 8, 13),
+		Card = Color3.fromRGB(20, 22, 27),
+		Card2 = Color3.fromRGB(26, 28, 36),
+		Stroke = Color3.fromRGB(45, 48, 58),
+		Accent = Color3.fromRGB(78, 127, 252),
+		AccentDark = Color3.fromRGB(40, 70, 180),
+		Text = Color3.fromRGB(255, 255, 255),
+		Muted = Color3.fromRGB(186, 186, 186),
+		Danger = Color3.fromRGB(255, 88, 105),
+	},
+	["Midnight"] = {
+		Background = Color3.fromRGB(5, 7, 12),
+		Background2 = Color3.fromRGB(10, 14, 22),
+		Sidebar = Color3.fromRGB(6, 8, 14),
+		Topbar = Color3.fromRGB(6, 8, 14),
+		Card = Color3.fromRGB(15, 19, 29),
+		Card2 = Color3.fromRGB(21, 26, 39),
+		Stroke = Color3.fromRGB(39, 48, 68),
+		Accent = Color3.fromRGB(74, 144, 255),
+		AccentDark = Color3.fromRGB(35, 78, 165),
+		Text = Color3.fromRGB(245, 248, 255),
+		Muted = Color3.fromRGB(164, 176, 198),
+		Danger = Color3.fromRGB(255, 92, 112),
+	},
+	["Crimson"] = {
+		Background = Color3.fromRGB(14, 7, 9),
+		Background2 = Color3.fromRGB(22, 11, 14),
+		Sidebar = Color3.fromRGB(14, 7, 9),
+		Topbar = Color3.fromRGB(14, 7, 9),
+		Card = Color3.fromRGB(29, 15, 19),
+		Card2 = Color3.fromRGB(38, 20, 25),
+		Stroke = Color3.fromRGB(68, 37, 45),
+		Accent = Color3.fromRGB(235, 64, 92),
+		AccentDark = Color3.fromRGB(148, 31, 52),
+		Text = Color3.fromRGB(255, 246, 248),
+		Muted = Color3.fromRGB(203, 167, 175),
+		Danger = Color3.fromRGB(255, 81, 105),
+	},
+	["Emerald"] = {
+		Background = Color3.fromRGB(6, 12, 10),
+		Background2 = Color3.fromRGB(10, 20, 16),
+		Sidebar = Color3.fromRGB(6, 12, 10),
+		Topbar = Color3.fromRGB(6, 12, 10),
+		Card = Color3.fromRGB(14, 28, 22),
+		Card2 = Color3.fromRGB(19, 37, 29),
+		Stroke = Color3.fromRGB(35, 65, 52),
+		Accent = Color3.fromRGB(52, 211, 153),
+		AccentDark = Color3.fromRGB(22, 120, 84),
+		Text = Color3.fromRGB(241, 255, 249),
+		Muted = Color3.fromRGB(158, 198, 181),
+		Danger = Color3.fromRGB(255, 91, 107),
+	},
+	["Violet"] = {
+		Background = Color3.fromRGB(10, 7, 15),
+		Background2 = Color3.fromRGB(17, 12, 25),
+		Sidebar = Color3.fromRGB(10, 7, 15),
+		Topbar = Color3.fromRGB(10, 7, 15),
+		Card = Color3.fromRGB(24, 17, 35),
+		Card2 = Color3.fromRGB(31, 22, 45),
+		Stroke = Color3.fromRGB(55, 40, 76),
+		Accent = Color3.fromRGB(157, 101, 255),
+		AccentDark = Color3.fromRGB(91, 50, 170),
+		Text = Color3.fromRGB(251, 247, 255),
+		Muted = Color3.fromRGB(190, 172, 208),
+		Danger = Color3.fromRGB(255, 89, 114),
+	},
+	["Snow"] = {
+		Background = Color3.fromRGB(235, 239, 246),
+		Background2 = Color3.fromRGB(220, 226, 236),
+		Sidebar = Color3.fromRGB(241, 244, 249),
+		Topbar = Color3.fromRGB(241, 244, 249),
+		Card = Color3.fromRGB(249, 250, 253),
+		Card2 = Color3.fromRGB(231, 235, 242),
+		Stroke = Color3.fromRGB(183, 192, 207),
+		Accent = Color3.fromRGB(55, 107, 220),
+		AccentDark = Color3.fromRGB(36, 72, 158),
+		Text = Color3.fromRGB(25, 31, 43),
+		Muted = Color3.fromRGB(91, 101, 119),
+		Danger = Color3.fromRGB(210, 58, 76),
+	},
+}
+
 local function copyTable(source)
 	local result = {}
 	for key, value in pairs(source) do
@@ -406,8 +495,6 @@ function Library.new(data)
 		Size = UDim2.fromOffset(760, 500),
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
-		Active = true, -- Consumes mouse/touch input inside the UI.
-		Selectable = true,
 	})
 	bindTheme(self, main, "BackgroundColor3", "Background")
 	main.BackgroundTransparency = 0.055
@@ -416,22 +503,6 @@ function Library.new(data)
 	local startupScale = create("UIScale", {
 		Parent = main,
 		Scale = 1,
-	})
-
-	-- Invisible input catcher prevents clicks on empty UI space from reaching
-	-- ClickDetectors, tools, camera controls, or other gameplay input.
-	local inputCatcher = create("TextButton", {
-		Name = "InputCatcher",
-		Parent = main,
-		Size = UDim2.fromScale(1, 1),
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		Text = "",
-		AutoButtonColor = false,
-		Active = true,
-		Selectable = false,
-		ZIndex = 0,
-		Active = false,
 	})
 
 	local backgroundImage = create("ImageLabel", {
@@ -595,6 +666,17 @@ function Library.new(data)
 	})
 	refreshCanvas(pageButtons, pageLayout, 10)
 
+	-- Divider above the local player profile card
+	local playerProfileDivider = create("Frame", {
+		Name = "PlayerProfileDivider",
+		Parent = sidebar,
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 12, 1, -74),
+		Size = UDim2.new(1, -24, 0, 1),
+		BorderSizePixel = 0,
+	})
+	bindTheme(self, playerProfileDivider, "BackgroundColor3", "Stroke")
+	playerProfileDivider.BackgroundTransparency = 0.35
 
 	-- Local player profile card fixed at the bottom of the sidebar
 	local playerProfile = create("Frame", {
@@ -768,6 +850,28 @@ function Library.new(data)
 		self:toggle()
 	end)
 
+	-- Built-in Kavo-style theme preset section.
+	self.currentThemePreset = "Walled Waves"
+
+	local themesPage = self:addPage({
+		title = "Themes",
+		iconText = "◆",
+	})
+
+	local themesSection = themesPage:addSection({
+		title = "Theme",
+		column = "left",
+	})
+
+	themesSection:addDropdown({
+		title = "Select Theme",
+		default = "Walled Waves",
+		list = self:getThemePresets(),
+		callback = function(selectedTheme)
+			self:setThemePreset(selectedTheme)
+		end,
+	})
+
 	return self
 end
 
@@ -870,6 +974,31 @@ function Library:setTheme(data, color)
 	return true
 end
 Library.SetTheme = Library.setTheme
+
+function Library:setThemePreset(name)
+	local preset = THEME_PRESETS[tostring(name)]
+	if not preset then
+		return false
+	end
+
+	for themeName, themeColor in pairs(preset) do
+		self:setTheme(themeName, themeColor)
+	end
+
+	self.currentThemePreset = tostring(name)
+	return true
+end
+Library.SetThemePreset = Library.setThemePreset
+
+function Library:getThemePresets()
+	local names = {}
+	for name in pairs(THEME_PRESETS) do
+		names[#names + 1] = name
+	end
+	table.sort(names)
+	return names
+end
+Library.GetThemePresets = Library.getThemePresets
 
 function Library:toggle(forceState)
 	if self._busy then return end
