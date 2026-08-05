@@ -378,6 +378,8 @@ function Library.new(data)
 	self._connections = {}
 	self._visible = true
 	self._busy = false
+	self.startupAnimation = data.startupAnimation ~= false
+	self.startupDuration = tonumber(data.startupDuration) or 0.45
 
 	if typeof(data.theme) == "table" then
 		for key, value in pairs(data.theme) do
@@ -408,6 +410,11 @@ function Library.new(data)
 	bindTheme(self, main, "BackgroundColor3", "Background")
 	main.BackgroundTransparency = 0.055
 	corner(main, 14)
+
+	local startupScale = create("UIScale", {
+		Parent = main,
+		Scale = 1,
+	})
 
 	local backgroundImage = create("ImageLabel", {
 		Name = "BackgroundImage",
@@ -570,6 +577,17 @@ function Library.new(data)
 	})
 	refreshCanvas(pageButtons, pageLayout, 10)
 
+	-- Divider above the local player profile card
+	local playerProfileDivider = create("Frame", {
+		Name = "PlayerProfileDivider",
+		Parent = sidebar,
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 12, 1, -74),
+		Size = UDim2.new(1, -24, 0, 1),
+		BorderSizePixel = 0,
+	})
+	bindTheme(self, playerProfileDivider, "BackgroundColor3", "Stroke")
+	playerProfileDivider.BackgroundTransparency = 0.35
 
 	-- Local player profile card fixed at the bottom of the sidebar
 	local playerProfile = create("Frame", {
@@ -609,7 +627,7 @@ function Library.new(data)
 	local usernameLabel = createLabel(
 		self,
 		playerProfile,
-		"" .. LocalPlayer.Name,
+		"@" .. LocalPlayer.Name,
 		13,
 		Enum.Font.GothamBold
 	)
@@ -692,8 +710,52 @@ function Library.new(data)
 	self.content = content
 	self.openPosition = main.Position
 	self.openSize = main.Size
+	self.startupScale = startupScale
 
 	makeDraggable(topbar, main)
+
+	-- Smooth startup animation.
+	if self.startupAnimation then
+		local finalPosition = main.Position
+		local finalTransparency = main.BackgroundTransparency
+
+		main.Position = UDim2.new(
+			finalPosition.X.Scale,
+			finalPosition.X.Offset,
+			finalPosition.Y.Scale,
+			finalPosition.Y.Offset + 18
+		)
+		main.BackgroundTransparency = 1
+		startupScale.Scale = 0.88
+
+		task.defer(function()
+			local duration = self.startupDuration
+			local moveTween = tween(
+				main,
+				duration,
+				{
+					Position = finalPosition,
+					BackgroundTransparency = finalTransparency,
+				},
+				Enum.EasingStyle.Quart,
+				Enum.EasingDirection.Out
+			)
+
+			tween(
+				startupScale,
+				duration,
+				{Scale = 1},
+				Enum.EasingStyle.Back,
+				Enum.EasingDirection.Out
+			)
+
+			moveTween.Completed:Connect(function()
+				if main.Parent then
+					self.openPosition = main.Position
+				end
+			end)
+		end)
+	end
 
 	minimize.MouseButton1Click:Connect(function()
 		self:toggle()
@@ -2053,7 +2115,6 @@ function Section:addColorPicker(data)
 		callback = data.callback or data.Callback or function() end,
 	}
 
-	local hue, saturation, value = options.color3:ToHSV()
 	local module = createBoxedModule(self, 40)
 	module.ClipsDescendants = true
 
@@ -2065,172 +2126,86 @@ function Section:addColorPicker(data)
 		AutoButtonColor = false,
 	})
 
-	local title = createBoxedTitle(self, header, options.title, 58)
+	local title = createBoxedTitle(self, header, options.title, 78)
 
-	-- Small square preview box shown while the picker is closed.
 	local preview = create("Frame", {
 		Parent = header,
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -12, 0.5, 0),
-		Size = UDim2.fromOffset(26, 26),
+		Size = UDim2.fromOffset(50, 18),
 		BorderSizePixel = 0,
 		BackgroundColor3 = options.color3,
 	})
 	corner(preview, 6)
 
-	local previewStroke = stroke(preview, self.library.theme.Stroke, 0.25, 1)
+	local previewStroke = stroke(preview, self.library.theme.Stroke, 0.5, 1)
 	bindTheme(self.library, previewStroke, "Color", "Stroke")
 
-	-- Saturation/value color box.
-	local colorBox = create("Frame", {
+	local inputs = create("Frame", {
 		Parent = module,
-		Position = UDim2.fromOffset(10, 46),
-		Size = UDim2.new(1, -20, 0, 105),
-		BorderSizePixel = 0,
-		BackgroundColor3 = Color3.fromHSV(hue, 1, 1),
-		Visible = false,
-		Active = true,
-	})
-	corner(colorBox, 7)
-
-	local colorBoxStroke = stroke(colorBox, self.library.theme.Stroke, 0.35, 1)
-	bindTheme(self.library, colorBoxStroke, "Color", "Stroke")
-
-	local whiteLayer = create("Frame", {
-		Parent = colorBox,
-		Size = UDim2.fromScale(1, 1),
-		BorderSizePixel = 0,
-		BackgroundColor3 = Color3.new(1, 1, 1),
-	})
-	corner(whiteLayer, 7)
-
-	create("UIGradient", {
-		Parent = whiteLayer,
-		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
-			ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1)),
-		}),
-		Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0),
-			NumberSequenceKeypoint.new(1, 1),
-		}),
-	})
-
-	local blackLayer = create("Frame", {
-		Parent = colorBox,
-		Size = UDim2.fromScale(1, 1),
-		BorderSizePixel = 0,
-		BackgroundColor3 = Color3.new(0, 0, 0),
+		Position = UDim2.fromOffset(8, 42),
+		Size = UDim2.new(1, -16, 0, 28),
 		BackgroundTransparency = 1,
-	})
-	corner(blackLayer, 7)
-
-	create("UIGradient", {
-		Parent = blackLayer,
-		Rotation = 90,
-		Color = ColorSequence.new(Color3.new(0, 0, 0)),
-		Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 1),
-			NumberSequenceKeypoint.new(1, 0),
-		}),
-	})
-
-	local colorCursor = create("Frame", {
-		Parent = colorBox,
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Size = UDim2.fromOffset(10, 10),
-		BackgroundColor3 = Color3.new(1, 1, 1),
-		BorderSizePixel = 0,
-		ZIndex = 5,
-	})
-	corner(colorCursor, 10)
-	stroke(colorCursor, Color3.new(0, 0, 0), 0.15, 1)
-
-	-- Hue strip.
-	local hueBar = create("Frame", {
-		Parent = module,
-		Position = UDim2.fromOffset(10, 159),
-		Size = UDim2.new(1, -20, 0, 16),
-		BorderSizePixel = 0,
-		BackgroundColor3 = Color3.new(1, 1, 1),
 		Visible = false,
-		Active = true,
-	})
-	corner(hueBar, 6)
-
-	create("UIGradient", {
-		Parent = hueBar,
-		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0.00, Color3.fromHSV(0.00, 1, 1)),
-			ColorSequenceKeypoint.new(0.17, Color3.fromHSV(0.17, 1, 1)),
-			ColorSequenceKeypoint.new(0.33, Color3.fromHSV(0.33, 1, 1)),
-			ColorSequenceKeypoint.new(0.50, Color3.fromHSV(0.50, 1, 1)),
-			ColorSequenceKeypoint.new(0.67, Color3.fromHSV(0.67, 1, 1)),
-			ColorSequenceKeypoint.new(0.83, Color3.fromHSV(0.83, 1, 1)),
-			ColorSequenceKeypoint.new(1.00, Color3.fromHSV(1.00, 1, 1)),
-		}),
 	})
 
-	local hueCursor = create("Frame", {
-		Parent = hueBar,
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(hue, 0, 0.5, 0),
-		Size = UDim2.fromOffset(4, 22),
-		BackgroundColor3 = Color3.new(1, 1, 1),
+	create("UIListLayout", {
+		Parent = inputs,
+		FillDirection = Enum.FillDirection.Horizontal,
+		Padding = UDim.new(0, 6),
+	})
+
+	local boxes = {}
+
+	for _, channel in ipairs({"R", "G", "B"}) do
+		local box = create("TextBox", {
+			Parent = inputs,
+			Size = UDim2.new(0.32, -4, 1, 0),
+			BorderSizePixel = 0,
+			ClearTextOnFocus = false,
+			Font = Enum.Font.GothamBold,
+			Text = "255",
+			TextSize = 10,
+		})
+		bindTheme(self.library, box, "BackgroundColor3", "Background2")
+		box.BackgroundTransparency = 0
+		bindTheme(self.library, box, "TextColor3", "Text")
+		box.TextTransparency = 0.35
+		corner(box, 6)
+		boxes[channel] = box
+	end
+
+	local apply = create("TextButton", {
+		Parent = module,
+		Position = UDim2.fromOffset(8, 76),
+		Size = UDim2.new(1, -16, 0, 26),
 		BorderSizePixel = 0,
-		ZIndex = 5,
+		Font = Enum.Font.GothamBold,
+		Text = "APPLY COLOR",
+		TextSize = 10,
+		Visible = false,
+		AutoButtonColor = false,
 	})
-	corner(hueCursor, 4)
-	stroke(hueCursor, Color3.new(0, 0, 0), 0.15, 1)
+	bindTheme(self.library, apply, "BackgroundColor3", "Accent")
+	apply.TextColor3 = Color3.fromRGB(4, 12, 18)
+	corner(apply, 6)
 
 	local opened = false
-	local draggingColor = false
-	local draggingHue = false
 
-	local function refreshColor(callCallback)
-		options.color3 = Color3.fromHSV(hue, saturation, value)
+	local function updateInputs()
+		boxes.R.Text = tostring(math.floor(options.color3.R * 255 + 0.5))
+		boxes.G.Text = tostring(math.floor(options.color3.G * 255 + 0.5))
+		boxes.B.Text = tostring(math.floor(options.color3.B * 255 + 0.5))
 		preview.BackgroundColor3 = options.color3
-		colorBox.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
-		colorCursor.Position = UDim2.new(saturation, 0, 1 - value, 0)
-		hueCursor.Position = UDim2.new(hue, 0, 0.5, 0)
-
-		if callCallback then
-			safeCall(options.callback, options.color3)
-		end
-	end
-
-	local function updateColorFromInput(inputObject)
-		local x = math.clamp(
-			(inputObject.Position.X - colorBox.AbsolutePosition.X) / colorBox.AbsoluteSize.X,
-			0,
-			1
-		)
-		local y = math.clamp(
-			(inputObject.Position.Y - colorBox.AbsolutePosition.Y) / colorBox.AbsoluteSize.Y,
-			0,
-			1
-		)
-		saturation = x
-		value = 1 - y
-		refreshColor(true)
-	end
-
-	local function updateHueFromInput(inputObject)
-		hue = math.clamp(
-			(inputObject.Position.X - hueBar.AbsolutePosition.X) / hueBar.AbsoluteSize.X,
-			0,
-			1
-		)
-		refreshColor(true)
 	end
 
 	local function setOpen(state)
 		opened = state == true
-		colorBox.Visible = opened
-		hueBar.Visible = opened
+		inputs.Visible = opened
+		apply.Visible = opened
 
 		tween(module, 0.18, {
-			Size = UDim2.new(1, 0, 0, opened and 187 or 40),
+			Size = UDim2.new(1, 0, 0, opened and 116 or 40),
 		})
 	end
 
@@ -2238,45 +2213,18 @@ function Section:addColorPicker(data)
 		setOpen(not opened)
 	end)
 
-	colorBox.InputBegan:Connect(function(inputObject)
-		if inputObject.UserInputType == Enum.UserInputType.MouseButton1
-			or inputObject.UserInputType == Enum.UserInputType.Touch then
-			draggingColor = true
-			updateColorFromInput(inputObject)
-		end
+	apply.MouseButton1Click:Connect(function()
+		local red = math.clamp(tonumber(boxes.R.Text) or 0, 0, 255)
+		local green = math.clamp(tonumber(boxes.G.Text) or 0, 0, 255)
+		local blue = math.clamp(tonumber(boxes.B.Text) or 0, 0, 255)
+
+		options.color3 = Color3.fromRGB(red, green, blue)
+		updateInputs()
+		setOpen(false)
+		safeCall(options.callback, options.color3)
 	end)
 
-	hueBar.InputBegan:Connect(function(inputObject)
-		if inputObject.UserInputType == Enum.UserInputType.MouseButton1
-			or inputObject.UserInputType == Enum.UserInputType.Touch then
-			draggingHue = true
-			updateHueFromInput(inputObject)
-		end
-	end)
-
-	UserInputService.InputChanged:Connect(function(inputObject)
-		if draggingColor and (
-			inputObject.UserInputType == Enum.UserInputType.MouseMovement
-			or inputObject.UserInputType == Enum.UserInputType.Touch
-		) then
-			updateColorFromInput(inputObject)
-		elseif draggingHue and (
-			inputObject.UserInputType == Enum.UserInputType.MouseMovement
-			or inputObject.UserInputType == Enum.UserInputType.Touch
-		) then
-			updateHueFromInput(inputObject)
-		end
-	end)
-
-	UserInputService.InputEnded:Connect(function(inputObject)
-		if inputObject.UserInputType == Enum.UserInputType.MouseButton1
-			or inputObject.UserInputType == Enum.UserInputType.Touch then
-			draggingColor = false
-			draggingHue = false
-		end
-	end)
-
-	refreshColor(false)
+	updateInputs()
 
 	local controller = {
 		Instance = module,
@@ -2286,8 +2234,10 @@ function Section:addColorPicker(data)
 	function controller:Set(color, callCallback)
 		if typeof(color) ~= "Color3" then return self end
 		options.color3 = color
-		hue, saturation, value = color:ToHSV()
-		refreshColor(callCallback ~= false)
+		updateInputs()
+		if callCallback ~= false then
+			safeCall(options.callback, options.color3)
+		end
 		return self
 	end
 
