@@ -570,6 +570,18 @@ function Library.new(data)
 	})
 	refreshCanvas(pageButtons, pageLayout, 10)
 
+	-- Divider above the local player profile card
+	local playerProfileDivider = create("Frame", {
+		Name = "PlayerProfileDivider",
+		Parent = sidebar,
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 12, 1, -74),
+		Size = UDim2.new(1, -24, 0, 1),
+		BorderSizePixel = 0,
+	})
+	bindTheme(self, playerProfileDivider, "BackgroundColor3", "Stroke")
+	playerProfileDivider.BackgroundTransparency = 0.35
+
 	-- Local player profile card fixed at the bottom of the sidebar
 	local playerProfile = create("Frame", {
 		Name = "PlayerProfile",
@@ -609,22 +621,22 @@ function Library.new(data)
 		self,
 		playerProfile,
 		"@" .. LocalPlayer.Name,
-		11,
+		13,
 		Enum.Font.GothamBold
 	)
-	usernameLabel.Position = UDim2.fromOffset(58, 8)
-	usernameLabel.Size = UDim2.new(1, -66, 0, 20)
+	usernameLabel.Position = UDim2.fromOffset(58, 6)
+	usernameLabel.Size = UDim2.new(1, -66, 0, 23)
 	usernameLabel.TextTruncate = Enum.TextTruncate.AtEnd
 
 	local displayNameLabel = createLabel(
 		self,
 		playerProfile,
 		LocalPlayer.DisplayName,
-		9,
+		11,
 		Enum.Font.GothamMedium
 	)
-	displayNameLabel.Position = UDim2.fromOffset(58, 28)
-	displayNameLabel.Size = UDim2.new(1, -66, 0, 18)
+	displayNameLabel.Position = UDim2.fromOffset(58, 29)
+	displayNameLabel.Size = UDim2.new(1, -66, 0, 20)
 	displayNameLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	bindTheme(self, displayNameLabel, "TextColor3", "Muted")
 	displayNameLabel.TextTransparency = 0.35
