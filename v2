@@ -6,14 +6,13 @@
 ██████╔╝╚██████╔╝██║  ██║██████╔╝██║  ██║██║ ╚████║██║  ██╗███████║
 ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
 -- ui made by azure :D
--- Converted to Neverlose style with boxed elements
+-- Converted to Neverlose style with dual-column card layout
 ]]
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local TextService = game:GetService("TextService")
-local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 assert(LocalPlayer, "Burbanks must run on the client.")
@@ -296,7 +295,7 @@ function Library.new(data)
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 	})
 
-	-- Main Frame (Neverlose style - dark background with slight transparency)
+	-- Main Frame
 	local main = create("Frame", {
 		Name = "Main",
 		Parent = screenGui,
@@ -323,19 +322,17 @@ function Library.new(data)
 	bindTheme(self, topbar, "BackgroundColor3", "Topbar")
 	topbar.BackgroundTransparency = 1
 
-	-- Accent line under topbar
 	local accentLine = create("Frame", {
 		Parent = topbar,
-		Position = UDim2.new(0, 0, 1, -1),
-		Size = UDim2.new(1, -10, 0, 1),
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, 0),
+		Size = UDim2.new(1, -10, 0, 1),
 		BorderSizePixel = 0,
 	})
 	bindTheme(self, accentLine, "BackgroundColor3", "Stroke")
 	accentLine.BackgroundTransparency = 0.5
 
-	-- Logo Box
+	-- Logo
 	local logoBox = create("Frame", {
 		Parent = topbar,
 		Position = UDim2.fromOffset(12, 8),
@@ -459,7 +456,7 @@ function Library.new(data)
 		ClipsDescendants = true,
 	})
 
-	-- Content Header (Box style)
+	-- Content Header
 	local contentHeader = create("Frame", {
 		Name = "ContentHeader",
 		Parent = content,
@@ -713,6 +710,7 @@ function Library:addPage(data)
 	page.library = self
 	page.title = tostring(data.title or data.Title or "PAGE")
 	page.sections = {}
+	page._columns = {} -- Track column containers
 
 	local button = create("TextButton", {
 		Parent = self.pagesContainer,
@@ -796,30 +794,62 @@ function Library:addPage(data)
 	bindTheme(self, title, "TextColor3", "Muted")
 	title.TextTransparency = 0.5
 
-	local container = create("ScrollingFrame", {
+	-- Create dual-column container for this page
+	local pageContainer = create("Frame", {
+		Name = "PageContainer",
 		Parent = self.content,
 		Position = UDim2.fromOffset(16, 68),
 		Size = UDim2.new(1, -32, 1, -84),
 		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		CanvasSize = UDim2.new(),
-		ScrollBarThickness = 0,
 		Visible = false,
 	})
 
-	local layout = create("UIListLayout", {
-		Parent = container,
+	-- Left column
+	local leftColumn = create("ScrollingFrame", {
+		Name = "LeftColumn",
+		Parent = pageContainer,
+		Size = UDim2.new(0.5, -6, 1, 0),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		CanvasSize = UDim2.new(),
+		ScrollBarThickness = 0,
+	})
+	local leftLayout = create("UIListLayout", {
+		Parent = leftColumn,
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Padding = UDim.new(0, 8),
 	})
-	refreshCanvas(container, layout, 12)
+	refreshCanvas(leftColumn, leftLayout, 8)
+
+	-- Right column
+	local rightColumn = create("ScrollingFrame", {
+		Name = "RightColumn",
+		Parent = pageContainer,
+		Position = UDim2.new(0.5, 6, 0, 0),
+		Size = UDim2.new(0.5, -6, 1, 0),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		CanvasSize = UDim2.new(),
+		ScrollBarThickness = 0,
+	})
+	local rightLayout = create("UIListLayout", {
+		Parent = rightColumn,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 8),
+	})
+	refreshCanvas(rightColumn, rightLayout, 8)
+
+	page._columns = {
+		left = leftColumn,
+		right = rightColumn,
+	}
+	page.container = pageContainer
 
 	page.button = button
 	page.background = background
 	page.accent = accent
 	page.icon = icon
 	page.buttonTitle = title
-	page.container = container
 
 	self.pages[#self.pages + 1] = page
 	button.LayoutOrder = #self.pages
@@ -920,10 +950,18 @@ function Page:addSection(data)
 	section.library = self.library
 	section.title = tostring(data.title or data.Title or "SECTION")
 	section.modules = {}
+	
+	-- Determine column placement
+	local column = data.column or "left" -- "left" or "right"
+	local columnContainer = self._columns[column]
+	
+	if not columnContainer then
+		columnContainer = self._columns["left"] -- fallback
+	end
 
-	-- Section Card (Box)
+	-- Create section card
 	local card = create("Frame", {
-		Parent = self.container,
+		Parent = columnContainer,
 		Size = UDim2.new(1, -4, 0, 48),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BorderSizePixel = 0,
@@ -974,6 +1012,8 @@ function Page:addSection(data)
 
 	section.container = card
 	section.moduleContainer = moduleContainer
+	section.column = column
+	
 	self.sections[#self.sections + 1] = section
 
 	return section
@@ -981,7 +1021,7 @@ end
 Page.AddSection = Page.addSection
 
 -- ============================================================
--- BOXED ELEMENTS
+-- SECTION ELEMENTS (Boxed)
 -- ============================================================
 
 function Section:addButton(data)
