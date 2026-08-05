@@ -854,13 +854,40 @@ end
 function Library:Notify(data)
 	data = data or {}
 
+	-- Create one shared bottom-right container so notifications stack vertically.
+	if not self._notificationStack or not self._notificationStack.Parent then
+		local notificationStack = create("Frame", {
+			Name = "NotificationStack",
+			Parent = self.container,
+			AnchorPoint = Vector2.new(1, 1),
+			Position = UDim2.new(1, -16, 1, -16),
+			Size = UDim2.new(1, -32, 1, -32),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ZIndex = 49,
+		})
+
+		create("UIListLayout", {
+			Parent = notificationStack,
+			FillDirection = Enum.FillDirection.Vertical,
+			HorizontalAlignment = Enum.HorizontalAlignment.Right,
+			VerticalAlignment = Enum.VerticalAlignment.Bottom,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Padding = UDim.new(0, 10),
+		})
+
+		self._notificationStack = notificationStack
+		self._notificationOrder = 0
+	end
+
+	self._notificationOrder = (self._notificationOrder or 0) + 1
+
 	local holder = create("Frame", {
-		Parent = self.container,
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -16, 1, -16),
+		Parent = self._notificationStack,
 		Size = UDim2.fromOffset(0, 140),
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
+		LayoutOrder = self._notificationOrder,
 		ZIndex = 50,
 	})
 	bindTheme(self, holder, "BackgroundColor3", "Card")
