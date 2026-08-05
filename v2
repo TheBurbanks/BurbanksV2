@@ -171,8 +171,8 @@ local function makeDraggable(handle, target)
 	local settleTween
 
 	-- Higher values feel more responsive; lower values feel softer and floatier.
-	local DRAG_SMOOTHNESS = 22
-	local PICKUP_PIXELS = 4
+	local DRAG_SMOOTHNESS = 13
+	local PICKUP_PIXELS = 2
 
 	handle.Active = true
 
