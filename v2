@@ -6,7 +6,7 @@
 ██████╔╝╚██████╔╝██║  ██║██████╔╝██║  ██║██║ ╚████║██║  ██╗███████║
 ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
 -- ui made by azure :D
--- Converted to Neverlose style by request
+-- Converted to Neverlose style with boxed elements
 ]]
 
 local Players = game:GetService("Players")
@@ -218,13 +218,17 @@ local function createLabel(window, parent, text, size, font)
 	return label
 end
 
-local function createModule(section, height)
+-- ============================================================
+-- BOXED MODULE CREATION
+-- ============================================================
+local function createBoxedModule(section, height)
 	local holder = create("Frame", {
 		Parent = section.moduleContainer,
-		Size = UDim2.new(1, 0, 0, height or 38),
+		Size = UDim2.new(1, -0, 0, height or 38),
 		BorderSizePixel = 0,
 	})
 	bindTheme(section.library, holder, "BackgroundColor3", "Card2")
+	holder.BackgroundTransparency = 0
 	corner(holder, 8)
 
 	local outline = stroke(holder, section.library.theme.Stroke, 0.5, 1)
@@ -233,7 +237,7 @@ local function createModule(section, height)
 	return holder
 end
 
-local function createModuleTitle(section, parent, title, rightPadding)
+local function createBoxedTitle(section, parent, title, rightPadding)
 	local label = createLabel(
 		section.library,
 		parent,
@@ -309,7 +313,7 @@ function Library.new(data)
 	local mainStroke = stroke(main, self.theme.Stroke, 0.5, 1)
 	bindTheme(self, mainStroke, "Color", "Stroke")
 
-	-- Topbar (Neverlose style)
+	-- Topbar
 	local topbar = create("Frame", {
 		Name = "Topbar",
 		Parent = main,
@@ -331,7 +335,7 @@ function Library.new(data)
 	bindTheme(self, accentLine, "BackgroundColor3", "Stroke")
 	accentLine.BackgroundTransparency = 0.5
 
-	-- Logo Box (Neverlose style)
+	-- Logo Box
 	local logoBox = create("Frame", {
 		Parent = topbar,
 		Position = UDim2.fromOffset(12, 8),
@@ -356,7 +360,7 @@ function Library.new(data)
 	bindTheme(self, subtitleLabel, "TextColor3", "Muted")
 	subtitleLabel.TextTransparency = 0.5
 
-	-- Status badge (Neverlose style)
+	-- Status badge
 	local status = create("Frame", {
 		Parent = topbar,
 		AnchorPoint = Vector2.new(1, 0.5),
@@ -401,7 +405,7 @@ function Library.new(data)
 	bindTheme(self, minimize, "TextColor3", "Muted")
 	minimize.TextTransparency = 0.5
 
-	-- Sidebar (Neverlose style - dark)
+	-- Sidebar
 	local sidebar = create("Frame", {
 		Name = "Sidebar",
 		Parent = main,
@@ -445,7 +449,7 @@ function Library.new(data)
 	})
 	refreshCanvas(pageButtons, pageLayout, 10)
 
-	-- Content area (Neverlose style)
+	-- Content area
 	local content = create("Frame", {
 		Name = "Content",
 		Parent = main,
@@ -455,6 +459,7 @@ function Library.new(data)
 		ClipsDescendants = true,
 	})
 
+	-- Content Header (Box style)
 	local contentHeader = create("Frame", {
 		Name = "ContentHeader",
 		Parent = content,
@@ -916,6 +921,7 @@ function Page:addSection(data)
 	section.title = tostring(data.title or data.Title or "SECTION")
 	section.modules = {}
 
+	-- Section Card (Box)
 	local card = create("Frame", {
 		Parent = self.container,
 		Size = UDim2.new(1, -4, 0, 48),
@@ -974,6 +980,10 @@ function Page:addSection(data)
 end
 Page.AddSection = Page.addSection
 
+-- ============================================================
+-- BOXED ELEMENTS
+-- ============================================================
+
 function Section:addButton(data)
 	data = data or {}
 
@@ -982,7 +992,7 @@ function Section:addButton(data)
 		callback = data.callback or data.Callback or function() end,
 	}
 
-	local module = createModule(self, 38)
+	local module = createBoxedModule(self, 38)
 
 	local button = create("TextButton", {
 		Parent = module,
@@ -992,7 +1002,7 @@ function Section:addButton(data)
 		AutoButtonColor = false,
 	})
 
-	local title = createModuleTitle(self, button, options.title, 44)
+	local title = createBoxedTitle(self, button, options.title, 44)
 
 	local arrow = createLabel(self.library, button, "›", 18, Enum.Font.GothamBold)
 	arrow.AnchorPoint = Vector2.new(1, 0.5)
@@ -1050,7 +1060,7 @@ function Section:addToggle(data)
 		callback = data.callback or data.Callback or function() end,
 	}
 
-	local module = createModule(self, 38)
+	local module = createBoxedModule(self, 38)
 	local button = create("TextButton", {
 		Parent = module,
 		Size = UDim2.fromScale(1, 1),
@@ -1059,7 +1069,7 @@ function Section:addToggle(data)
 		AutoButtonColor = false,
 	})
 
-	local title = createModuleTitle(self, button, options.title, 70)
+	local title = createBoxedTitle(self, button, options.title, 70)
 
 	local track = create("Frame", {
 		Parent = button,
@@ -1154,8 +1164,8 @@ function Section:addTextbox(data)
 		callback = data.callback or data.Callback or function() end,
 	}
 
-	local module = createModule(self, 38)
-	local title = createModuleTitle(self, module, options.title, 170)
+	local module = createBoxedModule(self, 38)
+	local title = createBoxedTitle(self, module, options.title, 170)
 
 	local holder = create("Frame", {
 		Parent = module,
@@ -1251,8 +1261,8 @@ function Section:addSlider(data)
 
 	options.value = math.clamp(options.value or options.min, options.min, options.max)
 
-	local module = createModule(self, 54)
-	local title = createModuleTitle(self, module, options.title, 74)
+	local module = createBoxedModule(self, 54)
+	local title = createBoxedTitle(self, module, options.title, 74)
 	title.Size = UDim2.new(1, -86, 0, 28)
 
 	local valueLabel = createLabel(
@@ -1396,7 +1406,7 @@ function Section:addKeybind(data)
 		changedCallback = data.changedCallback or function() end,
 	}
 
-	local module = createModule(self, 38)
+	local module = createBoxedModule(self, 38)
 	local button = create("TextButton", {
 		Parent = module,
 		Size = UDim2.fromScale(1, 1),
@@ -1405,7 +1415,7 @@ function Section:addKeybind(data)
 		AutoButtonColor = false,
 	})
 
-	local title = createModuleTitle(self, button, options.title, 120)
+	local title = createBoxedTitle(self, button, options.title, 120)
 
 	local keyBox = create("TextLabel", {
 		Parent = button,
@@ -1515,7 +1525,7 @@ function Section:addDropdown(data)
 		options.list[#options.list + 1] = tostring(value)
 	end
 
-	local module = createModule(self, 40)
+	local module = createBoxedModule(self, 40)
 	module.ClipsDescendants = true
 
 	local header = create("TextButton", {
@@ -1526,7 +1536,7 @@ function Section:addDropdown(data)
 		AutoButtonColor = false,
 	})
 
-	local title = createModuleTitle(
+	local title = createBoxedTitle(
 		self,
 		header,
 		options.selected and tostring(options.selected) or options.title,
@@ -1731,7 +1741,7 @@ function Section:addColorPicker(data)
 		callback = data.callback or data.Callback or function() end,
 	}
 
-	local module = createModule(self, 40)
+	local module = createBoxedModule(self, 40)
 	module.ClipsDescendants = true
 
 	local header = create("TextButton", {
@@ -1742,7 +1752,7 @@ function Section:addColorPicker(data)
 		AutoButtonColor = false,
 	})
 
-	local title = createModuleTitle(self, header, options.title, 78)
+	local title = createBoxedTitle(self, header, options.title, 78)
 
 	local preview = create("Frame", {
 		Parent = header,
