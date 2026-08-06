@@ -459,6 +459,24 @@ function Library.new(data)
 	self.logoImageValue = normalizeAssetId(data.logo or data.Logo or data.logoImage or data.LogoImage)
 	self.backgroundImageValue = normalizeAssetId(data.background or data.Background or data.backgroundImage or data.BackgroundImage)
 	self.backgroundTransparency = math.clamp(tonumber(data.backgroundTransparency or data.BackgroundTransparency) or 0.35, 0, 1)
+
+	-- Dashboard header can be configured directly from the client.
+	local dashboardData = data.dashboard or data.Dashboard or {}
+	self.dashboardTitle = tostring(
+		dashboardData.title
+		or dashboardData.Title
+		or data.dashboardTitle
+		or data.DashboardTitle
+		or "DASHBOARD"
+	)
+	self.dashboardSubtitle = tostring(
+		dashboardData.subtitle
+		or dashboardData.Subtitle
+		or data.dashboardSubtitle
+		or data.DashboardSubtitle
+		or "Configure modules and preferences"
+	)
+
 	self.theme = copyTable(NL_THEME)
 	self.pages = {}
 	self.focusedPage = nil
@@ -776,11 +794,11 @@ function Library.new(data)
 	local contentHeaderStroke = stroke(contentHeader, self.theme.Stroke, 0.5, 1)
 	bindTheme(self, contentHeaderStroke, "Color", "Stroke")
 
-	local contentHeaderTitle = createLabel(self, contentHeader, "DASHBOARD", 13, Enum.Font.GothamBold)
+	local contentHeaderTitle = createLabel(self, contentHeader, self.dashboardTitle, 13, Enum.Font.GothamBold)
 	contentHeaderTitle.Position = UDim2.fromOffset(14, 6)
 	contentHeaderTitle.Size = UDim2.new(1, -28, 0, 18)
 
-	local contentHeaderSub = createLabel(self, contentHeader, "Configure modules and preferences", 10, Enum.Font.Gotham)
+	local contentHeaderSub = createLabel(self, contentHeader, self.dashboardSubtitle, 10, Enum.Font.Gotham)
 	contentHeaderSub.Position = UDim2.fromOffset(14, 24)
 	contentHeaderSub.Size = UDim2.new(1, -28, 0, 14)
 	bindTheme(self, contentHeaderSub, "TextColor3", "Muted")
@@ -797,6 +815,9 @@ function Library.new(data)
 	self.backgroundImage = backgroundImage
 	self.pagesContainer = pageButtons
 	self.content = content
+	self.contentHeader = contentHeader
+	self.dashboardTitleLabel = contentHeaderTitle
+	self.dashboardSubtitleLabel = contentHeaderSub
 	self.openPosition = main.Position
 	self.openSize = main.Size
 	self.startupScale = startupScale
@@ -917,6 +938,51 @@ function Library:setSubtitle(subtitle)
 	self.subtitleLabel.Text = self.subtitle
 end
 Library.SetSubtitle = Library.setSubtitle
+
+--// Dashboard header controls
+function Library:setDashboardTitle(title)
+	self.dashboardTitle = tostring(title or "")
+	if self.dashboardTitleLabel then
+		self.dashboardTitleLabel.Text = self.dashboardTitle
+	end
+	return self
+end
+Library.SetDashboardTitle = Library.setDashboardTitle
+
+function Library:setDashboardSubtitle(subtitle)
+	self.dashboardSubtitle = tostring(subtitle or "")
+	if self.dashboardSubtitleLabel then
+		self.dashboardSubtitleLabel.Text = self.dashboardSubtitle
+	end
+	return self
+end
+Library.SetDashboardSubtitle = Library.setDashboardSubtitle
+
+function Library:setDashboard(data, subtitle)
+	if typeof(data) == "table" then
+		local titleValue = data.title or data.Title
+		local subtitleValue = data.subtitle or data.Subtitle
+
+		if titleValue ~= nil then
+			self:setDashboardTitle(titleValue)
+		end
+
+		if subtitleValue ~= nil then
+			self:setDashboardSubtitle(subtitleValue)
+		end
+	else
+		if data ~= nil then
+			self:setDashboardTitle(data)
+		end
+
+		if subtitle ~= nil then
+			self:setDashboardSubtitle(subtitle)
+		end
+	end
+
+	return self
+end
+Library.SetDashboard = Library.setDashboard
 
 function Library:setTheme(data, color)
 	local themeName
