@@ -1,4 +1,4 @@
---[[
+\--[[
 ██████╗ ██╗   ██╗██████╗ ██████╗  █████╗ ███╗   ██╗██╗  ██╗███████╗
 ██╔══██╗██║   ██║██╔══██╗██╔══██╗██╔══██╗████╗  ██║██║ ██╔╝██╔════╝
 ██████╔╝██║   ██║██████╔╝██████╔╝███████║██╔██╗ ██║█████╔╝ ███████╗
@@ -2615,5 +2615,170 @@ function Section:addColorPicker(data)
 	return controller
 end
 Section.AddColorPicker = Section.addColorPicker
+
+
+
+-- ============================================================
+-- CUSTOM LABEL ELEMENT
+-- Supports text-only labels, custom images, and Roblox avatars.
+-- ============================================================
+function Section:addLabel(data)
+	data = data or {}
+
+	local options = {
+		title = tostring(data.title or data.Title or "Label"),
+		subtitle = tostring(data.subtitle or data.Subtitle or ""),
+		image = normalizeAssetId(data.image or data.Image or data.avatar or data.Avatar),
+		userId = tonumber(data.userId or data.UserId),
+		height = math.clamp(tonumber(data.height or data.Height) or 64, 40, 220),
+		imageSize = math.clamp(tonumber(data.imageSize or data.ImageSize) or 44, 24, 180),
+		circular = data.circular == true or data.Circular == true,
+		centered = data.centered == true or data.Centered == true,
+		showBackground = data.showBackground ~= false and data.ShowBackground ~= false,
+	}
+
+	local module = createBoxedModule(self, options.height)
+	module.ClipsDescendants = true
+
+	if not options.showBackground then
+		module.BackgroundTransparency = 1
+		local moduleStroke = module:FindFirstChildOfClass("UIStroke")
+		if moduleStroke then moduleStroke.Transparency = 1 end
+	end
+
+	local imageHolder = create("Frame", {
+		Name = "ImageHolder", Parent = module, BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 10, 0.5, 0),
+		Size = UDim2.fromOffset(options.imageSize, options.imageSize),
+		Visible = options.image ~= "" or options.userId ~= nil,
+	})
+
+	local image = create("ImageLabel", {
+		Name = "Image", Parent = imageHolder, Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1, Image = options.image, ScaleType = Enum.ScaleType.Crop,
+	})
+
+	local imageCorner = corner(image, options.circular and options.imageSize or 8)
+	local imageStroke = stroke(image, self.library.theme.Stroke, 0.35, 1)
+	bindTheme(self.library, imageStroke, "Color", "Stroke")
+
+	local title = createLabel(self.library, module, options.title, 13, Enum.Font.GothamBold)
+	title.TextTruncate = Enum.TextTruncate.AtEnd
+
+	local subtitle = createLabel(self.library, module, options.subtitle, 11, Enum.Font.Gotham)
+	subtitle.TextTruncate = Enum.TextTruncate.AtEnd
+	bindTheme(self.library, subtitle, "TextColor3", "Muted")
+	subtitle.TextTransparency = 0.3
+
+	local function refreshLayout()
+		local hasImage = imageHolder.Visible
+		local textOffset = hasImage and (options.imageSize + 20) or 12
+		local hasSubtitle = options.subtitle ~= ""
+		local alignment = (options.centered and not hasImage) and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left
+		title.TextXAlignment = alignment
+		subtitle.TextXAlignment = alignment
+
+		if hasSubtitle then
+			title.Position = UDim2.fromOffset(textOffset, 10)
+			title.Size = UDim2.new(1, -(textOffset + 12), 0, 22)
+			subtitle.Position = UDim2.fromOffset(textOffset, 31)
+			subtitle.Size = UDim2.new(1, -(textOffset + 12), 0, 18)
+			subtitle.Visible = true
+		else
+			title.Position = UDim2.fromOffset(textOffset, 0)
+			title.Size = UDim2.new(1, -(textOffset + 12), 1, 0)
+			subtitle.Visible = false
+		end
+	end
+
+	local avatarRequest = 0
+	local function loadAvatar(userId)
+		userId = tonumber(userId)
+		if not userId then return false end
+		options.userId = userId
+		imageHolder.Visible = true
+		refreshLayout()
+		avatarRequest += 1
+		local requestId = avatarRequest
+		task.spawn(function()
+			local success, thumbnail = pcall(function()
+				return Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+			end)
+			if success and requestId == avatarRequest and image.Parent then
+				options.image = thumbnail
+				image.Image = thumbnail
+			end
+		end)
+		return true
+	end
+
+	refreshLayout()
+	if options.userId then loadAvatar(options.userId) end
+
+	local controller = { Instance = module, Image = image, TitleLabel = title, SubtitleLabel = subtitle }
+
+	function controller:SetTitle(value) options.title = tostring(value or ""); title.Text = options.title; return self end
+	function controller:SetSubtitle(value) options.subtitle = tostring(value or ""); subtitle.Text = options.subtitle; refreshLayout(); return self end
+	function controller:SetImage(value)
+		avatarRequest += 1; options.userId = nil; options.image = normalizeAssetId(value)
+		image.Image = options.image; imageHolder.Visible = options.image ~= ""; refreshLayout()
+		return options.image ~= ""
+	end
+	function controller:SetAvatar(userId) return loadAvatar(userId) end
+	function controller:ClearImage()
+		avatarRequest += 1; options.userId = nil; options.image = ""; image.Image = ""
+		imageHolder.Visible = false; refreshLayout(); return self
+	end
+	function controller:SetVisible(visible) module.Visible = visible == true; return self end
+	function controller:SetHeight(value)
+		options.height = math.clamp(tonumber(value) or options.height, 40, 220)
+		module.Size = UDim2.new(1, 0, 0, options.height); return self
+	end
+	function controller:SetImageSize(value)
+		options.imageSize = math.clamp(tonumber(value) or options.imageSize, 24, 180)
+		imageHolder.Size = UDim2.fromOffset(options.imageSize, options.imageSize)
+		imageCorner.CornerRadius = UDim.new(0, options.circular and options.imageSize or 8)
+		refreshLayout(); return self
+	end
+	function controller:SetCircular(enabled)
+		options.circular = enabled == true
+		imageCorner.CornerRadius = UDim.new(0, options.circular and options.imageSize or 8)
+		return self
+	end
+	function controller:SetCentered(enabled) options.centered = enabled == true; refreshLayout(); return self end
+	function controller:SetBackgroundVisible(visible)
+		options.showBackground = visible == true
+		module.BackgroundTransparency = options.showBackground and 0 or 1
+		local moduleStroke = module:FindFirstChildOfClass("UIStroke")
+		if moduleStroke then moduleStroke.Transparency = options.showBackground and 0.5 or 1 end
+		return self
+	end
+	function controller:Update(newOptions)
+		newOptions = newOptions or {}
+		if newOptions.title ~= nil or newOptions.Title ~= nil then self:SetTitle(newOptions.title or newOptions.Title) end
+		if newOptions.subtitle ~= nil or newOptions.Subtitle ~= nil then self:SetSubtitle(newOptions.subtitle or newOptions.Subtitle) end
+		if newOptions.userId ~= nil or newOptions.UserId ~= nil then
+			self:SetAvatar(newOptions.userId or newOptions.UserId)
+		elseif newOptions.image ~= nil or newOptions.Image ~= nil then
+			self:SetImage(newOptions.image or newOptions.Image)
+		end
+		if newOptions.height ~= nil or newOptions.Height ~= nil then self:SetHeight(newOptions.height or newOptions.Height) end
+		if newOptions.imageSize ~= nil or newOptions.ImageSize ~= nil then self:SetImageSize(newOptions.imageSize or newOptions.ImageSize) end
+		if newOptions.circular ~= nil or newOptions.Circular ~= nil then self:SetCircular(newOptions.circular == true or newOptions.Circular == true) end
+		if newOptions.centered ~= nil or newOptions.Centered ~= nil then self:SetCentered(newOptions.centered == true or newOptions.Centered == true) end
+		if newOptions.showBackground ~= nil or newOptions.ShowBackground ~= nil then
+			local visible = newOptions.showBackground; if visible == nil then visible = newOptions.ShowBackground end
+			self:SetBackgroundVisible(visible ~= false)
+		end
+		return self
+	end
+	function controller:GetInstance() return module end
+	function controller:Destroy() module:Destroy() end
+
+	self.modules[#self.modules + 1] = controller
+	return controller
+end
+
+Section.AddLabel = Section.addLabel
 
 return Library
