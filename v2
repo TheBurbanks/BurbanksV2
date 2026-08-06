@@ -394,7 +394,7 @@ local function createLabel(window, parent, text, size, font)
 		BackgroundTransparency = 1,
 		Font = font or Enum.Font.Gotham,
 		Text = text or "",
-		TextSize = size or 12,
+		TextSize = (size or 12) + 1,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Center,
 	})
@@ -616,7 +616,7 @@ function Library.new(data)
 		BackgroundTransparency = 1,
 		Font = Enum.Font.GothamBold,
 		Text = "—",
-		TextSize = 17,
+		TextSize = 18,
 		AutoButtonColor = false,
 	})
 	bindTheme(self, minimize, "TextColor3", "Muted")
@@ -1688,7 +1688,7 @@ function Section:addTextbox(data)
 		Font = Enum.Font.GothamMedium,
 		Text = options.default,
 		PlaceholderText = placeholderText,
-		TextSize = 10,
+		TextSize = 11,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 	bindTheme(self.library, textbox, "TextColor3", "Text")
@@ -2118,7 +2118,7 @@ function Section:addKeybind(data)
 		BorderSizePixel = 0,
 		Font = Enum.Font.GothamBold,
 		Text = formatKey(options.key),
-		TextSize = 9,
+		TextSize = 10,
 	})
 	bindTheme(self.library, keyBox, "BackgroundColor3", "Background2")
 	keyBox.BackgroundTransparency = 0
@@ -2260,7 +2260,7 @@ function Section:addDropdown(data)
 		PlaceholderText = "SEARCH...",
 		Text = "",
 		Font = Enum.Font.GothamMedium,
-		TextSize = 10,
+		TextSize = 11,
 		Visible = false,
 	})
 	bindTheme(self.library, search, "BackgroundColor3", "Background2")
@@ -2327,7 +2327,7 @@ function Section:addDropdown(data)
 					AutoButtonColor = false,
 					Font = Enum.Font.GothamMedium,
 					Text = value,
-					TextSize = 10,
+					TextSize = 11,
 				})
 				bindTheme(self.library, entry, "BackgroundColor3", "Background2")
 				entry.BackgroundTransparency = 0
@@ -2518,7 +2518,7 @@ function Section:addColorPicker(data)
 			ClearTextOnFocus = false,
 			Font = Enum.Font.GothamBold,
 			Text = "255",
-			TextSize = 10,
+			TextSize = 11,
 		})
 		bindTheme(self.library, box, "BackgroundColor3", "Background2")
 		box.BackgroundTransparency = 0
@@ -2535,7 +2535,7 @@ function Section:addColorPicker(data)
 		BorderSizePixel = 0,
 		Font = Enum.Font.GothamBold,
 		Text = "APPLY COLOR",
-		TextSize = 10,
+		TextSize = 11,
 		Visible = false,
 		AutoButtonColor = false,
 	})
