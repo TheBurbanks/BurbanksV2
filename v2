@@ -906,7 +906,7 @@ function Library.new(data)
 	self.title = tostring(data.title or data.Title or "BURBANKS")
 	self.subtitle = tostring(data.subtitle or data.Subtitle or "PRIVATE BUILD")
 	self.logoTextValue = tostring(data.logoText or data.LogoText or "N")
-	self.logoImageValue = normalizeAssetId(data.logo or data.Logo or data.logoImage or data.LogoImage)
+	self.logoImageValue = normalizeAssetId(data.logo or data.Logo or data.logoImage or data.LogoImage or 80419077988140)
 	self.backgroundImageValue = normalizeAssetId(data.background or data.Background or data.backgroundImage or data.BackgroundImage)
 	self.backgroundTransparency = math.clamp(tonumber(data.backgroundTransparency or data.BackgroundTransparency) or 0.35, 0, 1)
 
@@ -954,6 +954,11 @@ function Library.new(data)
 	self._busy = false
 	self.startupAnimation = data.startupAnimation ~= false
 	self.startupDuration = tonumber(data.startupDuration) or 0.45
+	self.startupMenu = data.startupMenu ~= false and data.StartupMenu ~= false
+	self.startupMenuDuration = math.max(0.6, tonumber(data.startupMenuDuration or data.StartupMenuDuration) or 1.8)
+	self.startupTitle = tostring(data.startupTitle or data.StartupTitle or self.title)
+	self.startupSubtitle = tostring(data.startupSubtitle or data.StartupSubtitle or self.subtitle)
+	self.startupVersion = tostring(data.startupVersion or data.StartupVersion or "Loading interface")
 
 	self.uiScale = math.clamp(tonumber(data.uiScale or data.UIScale or data.scale or data.Scale) or 1, 0.55, 1.35)
 	self.autoResponsive = data.autoResponsive ~= false and data.AutoResponsive ~= false
@@ -976,6 +981,119 @@ function Library.new(data)
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 	})
 
+	local startupOverlay
+	local startupCard
+	local startupCardScale
+	local startupLogo
+	local startupTitleLabel
+	local startupSubtitleLabel
+	local startupStatusLabel
+	local startupProgress
+	local startupProgressFill
+
+	if self.startupMenu then
+		startupOverlay = create("Frame", {
+			Name = "StartupOverlay",
+			Parent = screenGui,
+			Size = UDim2.fromScale(1, 1),
+			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+			BackgroundTransparency = 0.28,
+			BorderSizePixel = 0,
+			ZIndex = 200,
+		})
+
+		startupCard = create("Frame", {
+			Name = "StartupCard",
+			Parent = startupOverlay,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromOffset(370, 205),
+			BorderSizePixel = 0,
+			ZIndex = 201,
+		})
+		bindTheme(self, startupCard, "BackgroundColor3", "Background2")
+		corner(startupCard, 14)
+
+		local startupCardStroke = stroke(startupCard, self.theme.Stroke, 0.35, 1)
+		bindTheme(self, startupCardStroke, "Color", "Stroke")
+
+		startupCardScale = create("UIScale", {
+			Parent = startupCard,
+			Scale = 0.92,
+		})
+
+		local logoHolder = create("Frame", {
+			Parent = startupCard,
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, 22),
+			Size = UDim2.fromOffset(66, 66),
+			BorderSizePixel = 0,
+			ZIndex = 202,
+		})
+		bindTheme(self, logoHolder, "BackgroundColor3", "Card")
+		corner(logoHolder, 16)
+
+		local logoHolderStroke = stroke(logoHolder, self.theme.Stroke, 0.35, 1)
+		bindTheme(self, logoHolderStroke, "Color", "Stroke")
+
+		startupLogo = create("ImageLabel", {
+			Parent = logoHolder,
+			Position = UDim2.fromOffset(7, 7),
+			Size = UDim2.new(1, -14, 1, -14),
+			BackgroundTransparency = 1,
+			Image = self.logoImageValue,
+			ImageTransparency = 1,
+			ScaleType = Enum.ScaleType.Fit,
+			ZIndex = 203,
+		})
+
+		startupTitleLabel = createLabel(self, startupCard, self.startupTitle, 18, Enum.Font.GothamBold)
+		startupTitleLabel.AnchorPoint = Vector2.new(0.5, 0)
+		startupTitleLabel.Position = UDim2.new(0.5, 0, 0, 98)
+		startupTitleLabel.Size = UDim2.new(1, -36, 0, 24)
+		startupTitleLabel.TextXAlignment = Enum.TextXAlignment.Center
+		startupTitleLabel.TextTransparency = 1
+		startupTitleLabel.ZIndex = 203
+
+		startupSubtitleLabel = createLabel(self, startupCard, self.startupSubtitle, 10, Enum.Font.GothamMedium)
+		startupSubtitleLabel.AnchorPoint = Vector2.new(0.5, 0)
+		startupSubtitleLabel.Position = UDim2.new(0.5, 0, 0, 123)
+		startupSubtitleLabel.Size = UDim2.new(1, -36, 0, 18)
+		startupSubtitleLabel.TextXAlignment = Enum.TextXAlignment.Center
+		startupSubtitleLabel.TextTransparency = 1
+		startupSubtitleLabel.ZIndex = 203
+		bindTheme(self, startupSubtitleLabel, "TextColor3", "Muted")
+
+		startupStatusLabel = createLabel(self, startupCard, self.startupVersion, 9, Enum.Font.Gotham)
+		startupStatusLabel.AnchorPoint = Vector2.new(0.5, 0)
+		startupStatusLabel.Position = UDim2.new(0.5, 0, 0, 154)
+		startupStatusLabel.Size = UDim2.new(1, -48, 0, 16)
+		startupStatusLabel.TextXAlignment = Enum.TextXAlignment.Center
+		startupStatusLabel.TextTransparency = 1
+		startupStatusLabel.ZIndex = 203
+		bindTheme(self, startupStatusLabel, "TextColor3", "Muted")
+
+		startupProgress = create("Frame", {
+			Parent = startupCard,
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, 180),
+			Size = UDim2.new(1, -48, 0, 4),
+			BorderSizePixel = 0,
+			ZIndex = 202,
+		})
+		bindTheme(self, startupProgress, "BackgroundColor3", "Card2")
+		corner(startupProgress, 4)
+
+		startupProgressFill = create("Frame", {
+			Parent = startupProgress,
+			Size = UDim2.new(0, 0, 1, 0),
+			BorderSizePixel = 0,
+			ZIndex = 203,
+		})
+		bindTheme(self, startupProgressFill, "BackgroundColor3", "Accent")
+		corner(startupProgressFill, 4)
+	end
+
 	local main = create("Frame", {
 		Name = "Main",
 		Parent = screenGui,
@@ -984,6 +1102,7 @@ function Library.new(data)
 		Size = UDim2.fromOffset(760, 500),
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
+		Visible = not self.startupMenu,
 	})
 	bindTheme(self, main, "BackgroundColor3", "Background")
 	main.BackgroundTransparency = 0.055
@@ -1304,6 +1423,8 @@ function Library.new(data)
 	self.openPosition = main.Position
 	self.openSize = main.Size
 	self.startupScale = startupScale
+	self.startupOverlay = startupOverlay
+	self.startupCard = startupCard
 
 	makeDraggable(topbar, main)
 
@@ -1325,7 +1446,89 @@ function Library.new(data)
 		self:_applyResponsiveLayout()
 	end)
 
-	if self.startupAnimation then
+	if self.startupMenu then
+		task.defer(function()
+			local total = self.startupMenuDuration
+
+			if startupCard and startupCard.Parent then
+				tween(startupCardScale, 0.35, {Scale = 1}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+				tween(startupLogo, 0.35, {ImageTransparency = 0}, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+				tween(startupTitleLabel, 0.35, {TextTransparency = 0}, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+				tween(startupSubtitleLabel, 0.4, {TextTransparency = 0.25}, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+				tween(startupStatusLabel, 0.45, {TextTransparency = 0.45}, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+
+				tween(
+					startupProgressFill,
+					math.max(0.45, total - 0.35),
+					{Size = UDim2.new(1, 0, 1, 0)},
+					Enum.EasingStyle.Quint,
+					Enum.EasingDirection.Out
+				)
+
+				task.wait(math.max(0.2, total - 0.45))
+
+				tween(startupCardScale, 0.28, {Scale = 0.96}, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+				tween(startupLogo, 0.22, {ImageTransparency = 1})
+				tween(startupTitleLabel, 0.22, {TextTransparency = 1})
+				tween(startupSubtitleLabel, 0.22, {TextTransparency = 1})
+				tween(startupStatusLabel, 0.22, {TextTransparency = 1})
+				tween(startupOverlay, 0.28, {BackgroundTransparency = 1})
+
+				task.wait(0.3)
+
+				if startupOverlay and startupOverlay.Parent then
+					startupOverlay:Destroy()
+				end
+			end
+
+			if not main.Parent then return end
+
+			main.Visible = true
+
+			if self.startupAnimation then
+				local finalPosition = UDim2.fromScale(0.5, 0.5)
+				local finalTransparency = 0.055
+
+				main.Position = UDim2.new(
+					finalPosition.X.Scale,
+					finalPosition.X.Offset,
+					finalPosition.Y.Scale,
+					finalPosition.Y.Offset + 18
+				)
+				main.BackgroundTransparency = 1
+				startupScale.Scale = math.max(0.5, self.uiScale * 0.88)
+
+				local moveTween = tween(
+					main,
+					self.startupDuration,
+					{
+						Position = finalPosition,
+						BackgroundTransparency = finalTransparency,
+					},
+					Enum.EasingStyle.Quart,
+					Enum.EasingDirection.Out
+				)
+
+				tween(
+					startupScale,
+					self.startupDuration,
+					{Scale = self.uiScale},
+					Enum.EasingStyle.Back,
+					Enum.EasingDirection.Out
+				)
+
+				moveTween.Completed:Connect(function()
+					if main.Parent then
+						self.openPosition = main.Position
+						self.openSize = main.Size
+					end
+				end)
+			else
+				self.openPosition = main.Position
+				self.openSize = main.Size
+			end
+		end)
+	elseif self.startupAnimation then
 		local finalPosition = main.Position
 		local finalTransparency = main.BackgroundTransparency
 
