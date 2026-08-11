@@ -492,6 +492,25 @@ function Library.new(data)
 	)
 
 	self.theme = copyTable(NL_THEME)
+
+	-- Starting theme preset can be chosen directly from CreateWindow.
+	self.startThemePreset = tostring(
+		data.themePreset
+		or data.ThemePreset
+		or data.theme
+		or data.Theme
+		or "Walled Waves"
+	)
+
+	if THEME_PRESETS[self.startThemePreset] then
+		for themeName, themeColor in pairs(THEME_PRESETS[self.startThemePreset]) do
+			self.theme[themeName] = themeColor
+		end
+	else
+		self.startThemePreset = "Walled Waves"
+	end
+
+	self.currentThemePreset = self.startThemePreset
 	self.pages = {}
 	self.focusedPage = nil
 	self._themeObjects = {}
@@ -3522,6 +3541,7 @@ Section.AddLabel = Section.addLabel
 --[[
 CLIENT OPTIONS:
 local Window = Library:CreateWindow({
+	themePreset = "Black", -- Walled Waves, Black, Midnight, Crimson, Emerald, Violet, Snow
 	uiScale = 0.9,          -- 0.55 to 1.35
 	autoResponsive = true, -- automatically adapts for phones/tablets
 	sidebarCollapsed = false,
