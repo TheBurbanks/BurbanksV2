@@ -990,14 +990,20 @@ function Library.new(data)
 	local startupStatusLabel
 	local startupProgress
 	local startupProgressFill
+	local startupBlur
 
 	if self.startupMenu then
+		startupBlur = create("BlurEffect", {
+			Name = "BurbanksStartupBlur",
+			Parent = game:GetService("Lighting"),
+			Size = 0,
+		})
+		tween(startupBlur, 0.3, {Size = 18}, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
 		startupOverlay = create("Frame", {
 			Name = "StartupOverlay",
 			Parent = screenGui,
 			Size = UDim2.fromScale(1, 1),
-			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-			BackgroundTransparency = 0.28,
+			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			ZIndex = 200,
 		})
@@ -1425,6 +1431,7 @@ function Library.new(data)
 	self.startupScale = startupScale
 	self.startupOverlay = startupOverlay
 	self.startupCard = startupCard
+	self.startupBlur = startupBlur
 
 	makeDraggable(topbar, main)
 
@@ -1472,12 +1479,17 @@ function Library.new(data)
 				tween(startupTitleLabel, 0.22, {TextTransparency = 1})
 				tween(startupSubtitleLabel, 0.22, {TextTransparency = 1})
 				tween(startupStatusLabel, 0.22, {TextTransparency = 1})
-				tween(startupOverlay, 0.28, {BackgroundTransparency = 1})
+				if startupBlur and startupBlur.Parent then
+					tween(startupBlur, 0.28, {Size = 0}, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+				end
 
 				task.wait(0.3)
 
 				if startupOverlay and startupOverlay.Parent then
 					startupOverlay:Destroy()
+				end
+				if startupBlur and startupBlur.Parent then
+					startupBlur:Destroy()
 				end
 			end
 
