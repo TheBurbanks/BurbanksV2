@@ -79,6 +79,20 @@ local THEME_PRESETS = {
 		Muted = Color3.fromRGB(186, 186, 186),
 		Danger = Color3.fromRGB(255, 88, 105),
 	},
+	["Black"] = {
+		Background = Color3.fromRGB(0, 0, 0),
+		Background2 = Color3.fromRGB(5, 5, 5),
+		Sidebar = Color3.fromRGB(0, 0, 0),
+		Topbar = Color3.fromRGB(0, 0, 0),
+		Card = Color3.fromRGB(9, 9, 9),
+		Card2 = Color3.fromRGB(14, 14, 14),
+		Stroke = Color3.fromRGB(35, 35, 35),
+		Accent = Color3.fromRGB(255, 255, 255),
+		AccentDark = Color3.fromRGB(120, 120, 120),
+		Text = Color3.fromRGB(255, 255, 255),
+		Muted = Color3.fromRGB(165, 165, 165),
+		Danger = Color3.fromRGB(255, 75, 95),
+	},
 	["Midnight"] = {
 		Background = Color3.fromRGB(5, 7, 12),
 		Background2 = Color3.fromRGB(10, 14, 22),
@@ -488,6 +502,13 @@ function Library.new(data)
 	self.startupAnimation = data.startupAnimation ~= false
 	self.startupDuration = tonumber(data.startupDuration) or 0.45
 
+	-- Client-configurable UI behavior.
+	self.uiScale = math.clamp(tonumber(data.uiScale or data.UIScale or data.scale or data.Scale) or 1, 0.55, 1.35)
+	self.autoResponsive = data.autoResponsive ~= false and data.AutoResponsive ~= false
+	self.sidebarCollapsed = data.sidebarCollapsed == true or data.SidebarCollapsed == true
+	self.mobileBreakpoint = math.clamp(tonumber(data.mobileBreakpoint or data.MobileBreakpoint) or 700, 480, 1000)
+	self._mobileMode = false
+
 	if typeof(data.theme) == "table" then
 		for key, value in pairs(data.theme) do
 			if self.theme[key] ~= nil and typeof(value) == "Color3" then
@@ -520,7 +541,7 @@ function Library.new(data)
 
 	local startupScale = create("UIScale", {
 		Parent = main,
-		Scale = 1,
+		Scale = self.uiScale,
 	})
 
 	local backgroundImage = create("ImageLabel", {
@@ -666,6 +687,23 @@ function Library.new(data)
 	navigationLabel.Size = UDim2.new(1, -32, 0, 18)
 	bindTheme(self, navigationLabel, "TextColor3", "Muted")
 	navigationLabel.TextTransparency = 0.5
+
+	-- Sidebar collapse/expand button.
+	local sidebarCollapse = create("TextButton", {
+		Name = "SidebarCollapse",
+		Parent = sidebar,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -10, 0, 10),
+		Size = UDim2.fromOffset(24, 24),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Font = Enum.Font.GothamBold,
+		Text = "<",
+		TextSize = 16,
+		AutoButtonColor = false,
+	})
+	bindTheme(self, sidebarCollapse, "TextColor3", "Muted")
+	sidebarCollapse.TextTransparency = 0.25
 
 	local pageButtons = create("ScrollingFrame", {
 		Parent = sidebar,
@@ -816,6 +854,11 @@ function Library.new(data)
 	self.pagesContainer = pageButtons
 	self.content = content
 	self.contentHeader = contentHeader
+	self.sidebar = sidebar
+	self.sidebarCollapseButton = sidebarCollapse
+	self.playerProfile = playerProfile
+	self.playerProfileDivider = playerProfileDivider
+	self.navigationLabel = navigationLabel
 	self.dashboardTitleLabel = contentHeaderTitle
 	self.dashboardSubtitleLabel = contentHeaderSub
 	self.openPosition = main.Position
@@ -823,6 +866,25 @@ function Library.new(data)
 	self.startupScale = startupScale
 
 	makeDraggable(topbar, main)
+
+	sidebarCollapse.MouseButton1Click:Connect(function()
+		self:SetSidebarCollapsed(not self.sidebarCollapsed)
+	end)
+
+	-- Reflow automatically when the viewport changes.
+	local camera = workspace.CurrentCamera
+	if camera then
+		local viewportConnection = camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+			if self.autoResponsive then
+				self:_applyResponsiveLayout()
+			end
+		end)
+		self._connections[#self._connections + 1] = viewportConnection
+	end
+
+	task.defer(function()
+		self:_applyResponsiveLayout()
+	end)
 
 	-- Smooth startup animation.
 	if self.startupAnimation then
@@ -836,7 +898,7 @@ function Library.new(data)
 			finalPosition.Y.Offset + 18
 		)
 		main.BackgroundTransparency = 1
-		startupScale.Scale = 0.88
+		startupScale.Scale = math.max(0.5, self.uiScale * 0.88)
 
 		task.defer(function()
 			local duration = self.startupDuration
@@ -854,7 +916,7 @@ function Library.new(data)
 			tween(
 				startupScale,
 				duration,
-				{Scale = 1},
+				{Scale = self.uiScale},
 				Enum.EasingStyle.Back,
 				Enum.EasingDirection.Out
 			)
@@ -874,6 +936,164 @@ function Library.new(data)
 
 	return self
 end
+
+--// UI scale / responsive controls
+function Library:SetScale(value)
+	self.uiScale = math.clamp(tonumber(value) or self.uiScale or 1, 0.55, 1.35)
+	if self.startupScale then
+		tween(self.startupScale, 0.16, {Scale = self.uiScale})
+	end
+	return self
+end
+Library.setScale = Library.SetScale
+Library.SetUIScale = Library.SetScale
+Library.setUIScale = Library.SetScale
+
+function Library:GetScale()
+	return self.uiScale
+end
+Library.GetUIScale = Library.GetScale
+
+function Library:SetSidebarCollapsed(state)
+	self.sidebarCollapsed = state == true
+
+	if not self.sidebar or not self.content then
+		return self
+	end
+
+	local collapsedWidth = 58
+	local expandedWidth = 175
+	local width = self.sidebarCollapsed and collapsedWidth or expandedWidth
+
+	tween(self.sidebar, 0.18, {
+		Size = UDim2.new(0, width, 1, -50),
+	})
+
+	tween(self.content, 0.18, {
+		Position = UDim2.fromOffset(width + 1, 50),
+		Size = UDim2.new(1, -(width + 1), 1, -50),
+	})
+
+	if self.navigationLabel then
+		self.navigationLabel.Visible = not self.sidebarCollapsed
+	end
+	if self.playerProfile then
+		self.playerProfile.Visible = not self.sidebarCollapsed
+	end
+	if self.playerProfileDivider then
+		self.playerProfileDivider.Visible = not self.sidebarCollapsed
+	end
+	if self.sidebarCollapseButton then
+		self.sidebarCollapseButton.Text = self.sidebarCollapsed and ">" or "<"
+	end
+
+	-- Icon-only sidebar in collapsed mode.
+	for _, page in ipairs(self.pages) do
+		if page.buttonTitle then
+			page.buttonTitle.Visible = not self.sidebarCollapsed
+		end
+		if page.icon then
+			if page.icon:IsA("ImageLabel") or page.icon:IsA("ImageButton") then
+				page.icon.Position = self.sidebarCollapsed and UDim2.fromOffset(18, 7) or UDim2.fromOffset(12, 7)
+			else
+				page.icon.Position = self.sidebarCollapsed and UDim2.fromOffset(14, 0) or UDim2.fromOffset(10, 0)
+			end
+		end
+	end
+
+	return self
+end
+Library.setSidebarCollapsed = Library.SetSidebarCollapsed
+Library.ToggleSidebar = function(self)
+	return self:SetSidebarCollapsed(not self.sidebarCollapsed)
+end
+
+function Library:_applyPageLayout(page, mobile)
+	if not page or not page._columns then return end
+
+	local left = page._columns.left
+	local right = page._columns.right
+	if not left or not right then return end
+
+	if mobile then
+		left.Size = UDim2.new(1, 0, 0.5, -4)
+		left.Position = UDim2.fromOffset(0, 0)
+
+		right.Position = UDim2.new(0, 0, 0.5, 4)
+		right.Size = UDim2.new(1, 0, 0.5, -4)
+	else
+		left.Position = UDim2.fromOffset(0, 0)
+		left.Size = UDim2.new(0.5, -6, 1, 0)
+
+		right.Position = UDim2.new(0.5, 6, 0, 0)
+		right.Size = UDim2.new(0.5, -6, 1, 0)
+	end
+end
+
+function Library:_applyResponsiveLayout()
+	if not self.main then return self end
+
+	local camera = workspace.CurrentCamera
+	if not camera then return self end
+
+	local viewport = camera.ViewportSize
+	local mobile = self.autoResponsive and (
+		viewport.X <= self.mobileBreakpoint
+		or (UserInputService.TouchEnabled and viewport.X < 900)
+	)
+
+	self._mobileMode = mobile
+
+	if mobile then
+		-- Fit comfortably inside phone/tablet screens.
+		local width = math.max(320, viewport.X - 20)
+		local height = math.max(390, viewport.Y - 24)
+
+		self.main.Size = UDim2.fromOffset(width, height)
+		self.main.Position = UDim2.fromScale(0.5, 0.5)
+		self.openSize = self.main.Size
+		self.openPosition = self.main.Position
+
+		-- Mobile defaults to icon-only sidebar.
+		self:SetSidebarCollapsed(true)
+	else
+		self.main.Size = UDim2.fromOffset(760, 500)
+		self.main.Position = UDim2.fromScale(0.5, 0.5)
+		self.openSize = self.main.Size
+		self.openPosition = self.main.Position
+	end
+
+	for _, page in ipairs(self.pages) do
+		self:_applyPageLayout(page, mobile)
+	end
+
+	return self
+end
+
+function Library:SetMobileMode(enabled)
+	self.autoResponsive = false
+	self._mobileMode = enabled == true
+
+	if self._mobileMode then
+		self:SetSidebarCollapsed(true)
+	end
+
+	for _, page in ipairs(self.pages) do
+		self:_applyPageLayout(page, self._mobileMode)
+	end
+
+	return self
+end
+Library.setMobileMode = Library.SetMobileMode
+
+function Library:SetAutoResponsive(enabled)
+	self.autoResponsive = enabled ~= false
+	if self.autoResponsive then
+		self:_applyResponsiveLayout()
+	end
+	return self
+end
+Library.setAutoResponsive = Library.SetAutoResponsive
 
 function Library:CreateWindow(data)
 	return Library.new(data or {})
@@ -1368,6 +1588,17 @@ function Library:addPage(data)
 
 	self.pages[#self.pages + 1] = page
 	button.LayoutOrder = #self.pages
+
+	-- Match the current responsive/sidebar state for pages created after the window.
+	self:_applyPageLayout(page, self._mobileMode)
+	if self.sidebarCollapsed then
+		title.Visible = false
+		if icon:IsA("ImageLabel") or icon:IsA("ImageButton") then
+			icon.Position = UDim2.fromOffset(18, 7)
+		else
+			icon.Position = UDim2.fromOffset(14, 0)
+		end
+	end
 
 	button.MouseEnter:Connect(function()
 		if self.focusedPage ~= page then
@@ -2491,6 +2722,290 @@ function Section:addDropdown(data)
 end
 Section.AddDropdown = Section.addDropdown
 
+-- Multi-select dropdown. Callback receives an array of all selected values.
+function Section:addMultiDropdown(data)
+	data = data or {}
+
+	local options = {
+		title = tostring(data.title or data.Title or "MULTI DROPDOWN"),
+		list = {},
+		selected = {},
+		callback = data.callback or data.Callback or function() end,
+		max = tonumber(data.max or data.Max),
+	}
+
+	for _, value in ipairs(data.list or data.List or {}) do
+		options.list[#options.list + 1] = tostring(value)
+	end
+
+	local defaults = data.default or data.Default or data.selected or data.Selected or {}
+	if typeof(defaults) ~= "table" then defaults = {defaults} end
+	for _, value in ipairs(defaults) do
+		local stringValue = tostring(value)
+		if table.find(options.list, stringValue) and not table.find(options.selected, stringValue) then
+			options.selected[#options.selected + 1] = stringValue
+		end
+	end
+
+	local module = createBoxedModule(self, 40)
+	module.ClipsDescendants = true
+
+	local header = create("TextButton", {
+		Parent = module,
+		Size = UDim2.new(1, 0, 0, 40),
+		BackgroundTransparency = 1,
+		Text = "",
+		AutoButtonColor = false,
+	})
+
+	local title = createBoxedTitle(self, header, options.title, 48)
+
+	local arrow = createLabel(self.library, header, "v", 15, Enum.Font.GothamBold)
+	arrow.AnchorPoint = Vector2.new(1, 0.5)
+	arrow.Position = UDim2.new(1, -12, 0.5, 0)
+	arrow.Size = UDim2.fromOffset(20, 20)
+	arrow.TextXAlignment = Enum.TextXAlignment.Center
+	bindTheme(self.library, arrow, "TextColor3", "Muted")
+	arrow.TextTransparency = 0.5
+
+	local search = create("TextBox", {
+		Parent = module,
+		Position = UDim2.fromOffset(8, 40),
+		Size = UDim2.new(1, -16, 0, 26),
+		BorderSizePixel = 0,
+		ClearTextOnFocus = false,
+		PlaceholderText = "SEARCH...",
+		Text = "",
+		Font = Enum.Font.GothamMedium,
+		TextSize = 11,
+		Visible = false,
+	})
+	bindTheme(self.library, search, "BackgroundColor3", "Background2")
+	bindTheme(self.library, search, "TextColor3", "Text")
+	bindTheme(self.library, search, "PlaceholderColor3", "Muted")
+	search.TextTransparency = 0.35
+	corner(search, 6)
+
+	local list = create("ScrollingFrame", {
+		Parent = module,
+		Position = UDim2.fromOffset(8, 72),
+		Size = UDim2.new(1, -16, 0, 112),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		CanvasSize = UDim2.new(),
+		ScrollBarThickness = 0,
+		Visible = false,
+	})
+
+	local layout = create("UIListLayout", {
+		Parent = list,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 4),
+	})
+	refreshCanvas(list, layout, 5)
+
+	local opened = false
+
+	local function copySelected()
+		local result = {}
+		for i, value in ipairs(options.selected) do
+			result[i] = value
+		end
+		return result
+	end
+
+	local function updateTitle()
+		if #options.selected == 0 then
+			title.Text = options.title
+		elseif #options.selected == 1 then
+			title.Text = options.selected[1]
+		elseif #options.selected <= 3 then
+			title.Text = table.concat(options.selected, ", ")
+		else
+			title.Text = ("%d SELECTED"):format(#options.selected)
+		end
+	end
+
+	local function setOpen(state)
+		opened = state == true
+		search.Visible = opened
+		list.Visible = opened
+
+		tween(arrow, 0.15, {
+			Rotation = opened and 180 or 0,
+			TextColor3 = opened and self.library.theme.Accent or self.library.theme.Muted,
+			TextTransparency = opened and 0 or 0.5,
+		})
+
+		tween(module, 0.18, {
+			Size = UDim2.new(1, 0, 0, opened and 202 or 40),
+		})
+	end
+
+	local function clearEntries()
+		for _, child in ipairs(list:GetChildren()) do
+			if child:IsA("TextButton") then
+				child:Destroy()
+			end
+		end
+	end
+
+	local rebuild
+	rebuild = function(filter)
+		clearEntries()
+		filter = string.lower(tostring(filter or ""))
+
+		for _, value in ipairs(options.list) do
+			if filter == "" or string.find(string.lower(value), filter, 1, true) then
+				local selected = table.find(options.selected, value) ~= nil
+
+				local entry = create("TextButton", {
+					Parent = list,
+					Size = UDim2.new(1, -3, 0, 30),
+					BorderSizePixel = 0,
+					AutoButtonColor = false,
+					Font = Enum.Font.GothamMedium,
+					Text = "",
+				})
+				bindTheme(self.library, entry, "BackgroundColor3", "Background2")
+				entry.BackgroundTransparency = selected and 0.35 or 0
+				corner(entry, 6)
+
+				local checkBox = create("Frame", {
+					Parent = entry,
+					Position = UDim2.fromOffset(7, 6),
+					Size = UDim2.fromOffset(18, 18),
+					BorderSizePixel = 0,
+				})
+				bindTheme(self.library, checkBox, "BackgroundColor3", selected and "Accent" or "Card")
+				corner(checkBox, 5)
+
+				local checkStroke = stroke(checkBox, self.library.theme.Stroke, selected and 0.1 or 0.4, 1)
+				bindTheme(self.library, checkStroke, "Color", "Stroke")
+
+				local check = createLabel(self.library, checkBox, selected and "✓" or "", 11, Enum.Font.GothamBold)
+				check.Size = UDim2.fromScale(1, 1)
+				check.TextXAlignment = Enum.TextXAlignment.Center
+				check.TextColor3 = Color3.fromRGB(255,255,255)
+
+				local entryText = createLabel(self.library, entry, value, 11, Enum.Font.GothamMedium)
+				entryText.Position = UDim2.fromOffset(32, 0)
+				entryText.Size = UDim2.new(1, -40, 1, 0)
+				bindTheme(self.library, entryText, "TextColor3", selected and "Text" or "Muted")
+				entryText.TextTransparency = selected and 0 or 0.4
+
+				entry.MouseButton1Click:Connect(function()
+					local index = table.find(options.selected, value)
+					if index then
+						table.remove(options.selected, index)
+					else
+						if options.max and #options.selected >= options.max then
+							return
+						end
+						options.selected[#options.selected + 1] = value
+					end
+
+					updateTitle()
+					rebuild(search.Text)
+					safeCall(options.callback, copySelected(), value)
+				end)
+			end
+		end
+	end
+
+	header.MouseButton1Click:Connect(function()
+		setOpen(not opened)
+		if opened then
+			search.Text = ""
+			rebuild("")
+		end
+	end)
+
+	search:GetPropertyChangedSignal("Text"):Connect(function()
+		if opened then rebuild(search.Text) end
+	end)
+
+	updateTitle()
+	rebuild("")
+
+	local controller = {
+		Instance = module,
+		Options = options,
+	}
+
+	function controller:Set(values, callCallback)
+		if typeof(values) ~= "table" then values = {values} end
+		table.clear(options.selected)
+
+		for _, value in ipairs(values) do
+			local stringValue = tostring(value)
+			if table.find(options.list, stringValue)
+				and not table.find(options.selected, stringValue)
+				and (not options.max or #options.selected < options.max) then
+				options.selected[#options.selected + 1] = stringValue
+			end
+		end
+
+		updateTitle()
+		rebuild(search.Text)
+
+		if callCallback ~= false then
+			safeCall(options.callback, copySelected())
+		end
+		return self
+	end
+
+	function controller:Get()
+		return copySelected()
+	end
+
+	function controller:Clear(callCallback)
+		return self:Set({}, callCallback)
+	end
+
+	function controller:Update(newOptions)
+		newOptions = newOptions or {}
+
+		if newOptions.title ~= nil or newOptions.Title ~= nil then
+			options.title = tostring(newOptions.title or newOptions.Title)
+		end
+
+		local newList = newOptions.list or newOptions.List
+		if typeof(newList) == "table" then
+			table.clear(options.list)
+			for _, value in ipairs(newList) do
+				options.list[#options.list + 1] = tostring(value)
+			end
+		end
+
+		if newOptions.max ~= nil or newOptions.Max ~= nil then
+			options.max = tonumber(newOptions.max or newOptions.Max)
+		end
+
+		local newSelected = newOptions.default or newOptions.Default or newOptions.selected or newOptions.Selected
+		if newSelected ~= nil then
+			self:Set(newSelected, false)
+		else
+			updateTitle()
+			rebuild(search.Text)
+		end
+
+		if typeof(newOptions.callback) == "function" then
+			options.callback = newOptions.callback
+		elseif typeof(newOptions.Callback) == "function" then
+			options.callback = newOptions.Callback
+		end
+
+		return self
+	end
+
+	self.modules[#self.modules + 1] = controller
+	return controller
+end
+Section.AddMultiDropdown = Section.addMultiDropdown
+Section.addMultiSelectDropdown = Section.addMultiDropdown
+Section.AddMultiSelectDropdown = Section.addMultiDropdown
+
 -- Adds a theme preset dropdown to whichever section the client chooses.
 function Section:addThemeSelector(data)
 	data = data or {}
@@ -2531,6 +3046,7 @@ function Section:addColorPicker(data)
 	local options = {
 		title = tostring(data.title or data.Title or "COLOR"),
 		color3 = typeof(data.default) == "Color3" and data.default or self.library.theme.Accent,
+		transparency = math.clamp(tonumber(data.transparency or data.Transparency) or 0, 0, 1),
 		callback = data.callback or data.Callback or function() end,
 	}
 
@@ -2545,86 +3061,208 @@ function Section:addColorPicker(data)
 		AutoButtonColor = false,
 	})
 
-	local title = createBoxedTitle(self, header, options.title, 78)
+	local title = createBoxedTitle(self, header, options.title, 58)
 
+	-- Compact color box preview instead of the old long color preview.
 	local preview = create("Frame", {
 		Parent = header,
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -12, 0.5, 0),
-		Size = UDim2.fromOffset(50, 18),
+		Size = UDim2.fromOffset(24, 24),
 		BorderSizePixel = 0,
 		BackgroundColor3 = options.color3,
+		BackgroundTransparency = options.transparency,
 	})
 	corner(preview, 6)
 
-	local previewStroke = stroke(preview, self.library.theme.Stroke, 0.5, 1)
+	local previewStroke = stroke(preview, self.library.theme.Stroke, 0.25, 1)
 	bindTheme(self.library, previewStroke, "Color", "Stroke")
 
-	local inputs = create("Frame", {
+	local panel = create("Frame", {
 		Parent = module,
-		Position = UDim2.fromOffset(8, 42),
-		Size = UDim2.new(1, -16, 0, 28),
+		Position = UDim2.fromOffset(8, 43),
+		Size = UDim2.new(1, -16, 0, 88),
 		BackgroundTransparency = 1,
 		Visible = false,
 	})
 
-	create("UIListLayout", {
-		Parent = inputs,
-		FillDirection = Enum.FillDirection.Horizontal,
-		Padding = UDim.new(0, 6),
+	-- Preset color boxes.
+	local palette = {
+		Color3.fromRGB(255, 255, 255),
+		Color3.fromRGB(0, 0, 0),
+		Color3.fromRGB(78, 127, 252),
+		Color3.fromRGB(157, 101, 255),
+		Color3.fromRGB(235, 64, 92),
+		Color3.fromRGB(255, 145, 66),
+		Color3.fromRGB(245, 207, 66),
+		Color3.fromRGB(52, 211, 153),
+		Color3.fromRGB(40, 200, 220),
+		Color3.fromRGB(165, 165, 165),
+	}
+
+	local paletteHolder = create("Frame", {
+		Parent = panel,
+		Position = UDim2.fromOffset(0, 0),
+		Size = UDim2.new(1, 0, 0, 30),
+		BackgroundTransparency = 1,
 	})
 
-	local boxes = {}
+	local paletteLayout = create("UIListLayout", {
+		Parent = paletteHolder,
+		FillDirection = Enum.FillDirection.Horizontal,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		Padding = UDim.new(0, 5),
+	})
 
-	for _, channel in ipairs({"R", "G", "B"}) do
-		local box = create("TextBox", {
-			Parent = inputs,
-			Size = UDim2.new(0.32, -4, 1, 0),
-			BorderSizePixel = 0,
-			ClearTextOnFocus = false,
-			Font = Enum.Font.GothamBold,
-			Text = "255",
-			TextSize = 11,
-		})
-		bindTheme(self.library, box, "BackgroundColor3", "Background2")
-		box.BackgroundTransparency = 0
-		bindTheme(self.library, box, "TextColor3", "Text")
-		box.TextTransparency = 0.35
-		corner(box, 6)
-		boxes[channel] = box
+	local colorBoxes = {}
+
+	local function fireChanged()
+		safeCall(options.callback, options.color3, options.transparency)
 	end
 
-	local apply = create("TextButton", {
-		Parent = module,
-		Position = UDim2.fromOffset(8, 76),
-		Size = UDim2.new(1, -16, 0, 26),
+	local function refreshPreview()
+		preview.BackgroundColor3 = options.color3
+		preview.BackgroundTransparency = options.transparency
+
+		for _, entry in ipairs(colorBoxes) do
+			local selected = entry.Color == options.color3
+			entry.Stroke.Thickness = selected and 2 or 1
+			entry.Stroke.Transparency = selected and 0 or 0.45
+			entry.Stroke.Color = selected and self.library.theme.Text or self.library.theme.Stroke
+		end
+	end
+
+	for _, colorValue in ipairs(palette) do
+		local swatch = create("TextButton", {
+			Parent = paletteHolder,
+			Size = UDim2.fromOffset(22, 22),
+			BorderSizePixel = 0,
+			BackgroundColor3 = colorValue,
+			Text = "",
+			AutoButtonColor = false,
+		})
+		corner(swatch, 5)
+
+		local swatchStroke = stroke(swatch, self.library.theme.Stroke, 0.45, 1)
+		colorBoxes[#colorBoxes + 1] = {
+			Button = swatch,
+			Stroke = swatchStroke,
+			Color = colorValue,
+		}
+
+		swatch.MouseButton1Click:Connect(function()
+			options.color3 = colorValue
+			refreshPreview()
+			fireChanged()
+		end)
+	end
+
+	-- Transparency row.
+	local transparencyLabel = createLabel(
+		self.library,
+		panel,
+		"TRANSPARENCY",
+		9,
+		Enum.Font.GothamBold
+	)
+	transparencyLabel.Position = UDim2.fromOffset(0, 37)
+	transparencyLabel.Size = UDim2.fromOffset(90, 18)
+	bindTheme(self.library, transparencyLabel, "TextColor3", "Muted")
+	transparencyLabel.TextTransparency = 0.35
+
+	local transparencyValue = createLabel(
+		self.library,
+		panel,
+		"0%",
+		9,
+		Enum.Font.GothamBold
+	)
+	transparencyValue.AnchorPoint = Vector2.new(1, 0)
+	transparencyValue.Position = UDim2.new(1, 0, 0, 37)
+	transparencyValue.Size = UDim2.fromOffset(42, 18)
+	transparencyValue.TextXAlignment = Enum.TextXAlignment.Right
+	bindTheme(self.library, transparencyValue, "TextColor3", "Muted")
+	transparencyValue.TextTransparency = 0.2
+
+	local slider = create("Frame", {
+		Parent = panel,
+		Position = UDim2.fromOffset(0, 61),
+		Size = UDim2.new(1, 0, 0, 7),
 		BorderSizePixel = 0,
-		Font = Enum.Font.GothamBold,
-		Text = "APPLY COLOR",
-		TextSize = 11,
-		Visible = false,
-		AutoButtonColor = false,
 	})
-	bindTheme(self.library, apply, "BackgroundColor3", "Accent")
-	apply.TextColor3 = Color3.fromRGB(4, 12, 18)
-	corner(apply, 6)
+	bindTheme(self.library, slider, "BackgroundColor3", "Background2")
+	corner(slider, 6)
+
+	local fill = create("Frame", {
+		Parent = slider,
+		Size = UDim2.new(options.transparency, 0, 1, 0),
+		BorderSizePixel = 0,
+	})
+	bindTheme(self.library, fill, "BackgroundColor3", "Accent")
+	corner(fill, 6)
+
+	local knob = create("Frame", {
+		Parent = slider,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(options.transparency, 0, 0.5, 0),
+		Size = UDim2.fromOffset(13, 13),
+		BorderSizePixel = 0,
+	})
+	bindTheme(self.library, knob, "BackgroundColor3", "Text")
+	corner(knob, 7)
+
+	local knobStroke = stroke(knob, self.library.theme.Stroke, 0.15, 1)
+	bindTheme(self.library, knobStroke, "Color", "Stroke")
+
+	local dragging = false
+
+	local function setTransparencyFromX(x, callCallback)
+		local width = slider.AbsoluteSize.X
+		if width <= 0 then return end
+
+		local alpha = math.clamp((x - slider.AbsolutePosition.X) / width, 0, 1)
+		options.transparency = alpha
+
+		fill.Size = UDim2.new(alpha, 0, 1, 0)
+		knob.Position = UDim2.new(alpha, 0, 0.5, 0)
+		transparencyValue.Text = ("%d%%"):format(math.floor(alpha * 100 + 0.5))
+		preview.BackgroundTransparency = alpha
+
+		if callCallback ~= false then
+			fireChanged()
+		end
+	end
+
+	slider.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			setTransparencyFromX(input.Position.X, true)
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if not dragging then return end
+		if input.UserInputType == Enum.UserInputType.MouseMovement
+			or input.UserInputType == Enum.UserInputType.Touch then
+			setTransparencyFromX(input.Position.X, true)
+		end
+	end)
+
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end)
 
 	local opened = false
-
-	local function updateInputs()
-		boxes.R.Text = tostring(math.floor(options.color3.R * 255 + 0.5))
-		boxes.G.Text = tostring(math.floor(options.color3.G * 255 + 0.5))
-		boxes.B.Text = tostring(math.floor(options.color3.B * 255 + 0.5))
-		preview.BackgroundColor3 = options.color3
-	end
-
 	local function setOpen(state)
 		opened = state == true
-		inputs.Visible = opened
-		apply.Visible = opened
+		panel.Visible = opened
 
 		tween(module, 0.18, {
-			Size = UDim2.new(1, 0, 0, opened and 116 or 40),
+			Size = UDim2.new(1, 0, 0, opened and 140 or 40),
 		})
 	end
 
@@ -2632,48 +3270,82 @@ function Section:addColorPicker(data)
 		setOpen(not opened)
 	end)
 
-	apply.MouseButton1Click:Connect(function()
-		local red = math.clamp(tonumber(boxes.R.Text) or 0, 0, 255)
-		local green = math.clamp(tonumber(boxes.G.Text) or 0, 0, 255)
-		local blue = math.clamp(tonumber(boxes.B.Text) or 0, 0, 255)
+	local function refreshAll()
+		transparencyValue.Text = ("%d%%"):format(math.floor(options.transparency * 100 + 0.5))
+		fill.Size = UDim2.new(options.transparency, 0, 1, 0)
+		knob.Position = UDim2.new(options.transparency, 0, 0.5, 0)
+		refreshPreview()
+	end
 
-		options.color3 = Color3.fromRGB(red, green, blue)
-		updateInputs()
-		setOpen(false)
-		safeCall(options.callback, options.color3)
-	end)
-
-	updateInputs()
+	refreshAll()
 
 	local controller = {
 		Instance = module,
 		Options = options,
+		Preview = preview,
 	}
 
-	function controller:Set(color, callCallback)
-		if typeof(color) ~= "Color3" then return self end
-		options.color3 = color
-		updateInputs()
-		if callCallback ~= false then
-			safeCall(options.callback, options.color3)
+	function controller:Set(color, transparency, callCallback)
+		if typeof(color) == "Color3" then
+			options.color3 = color
 		end
+
+		if tonumber(transparency) ~= nil then
+			options.transparency = math.clamp(tonumber(transparency), 0, 1)
+		elseif typeof(transparency) == "boolean" and callCallback == nil then
+			callCallback = transparency
+		end
+
+		refreshAll()
+
+		if callCallback ~= false then
+			fireChanged()
+		end
+
 		return self
+	end
+
+	function controller:SetTransparency(value, callCallback)
+		options.transparency = math.clamp(tonumber(value) or options.transparency, 0, 1)
+		refreshAll()
+
+		if callCallback ~= false then
+			fireChanged()
+		end
+
+		return self
+	end
+
+	function controller:Get()
+		return options.color3, options.transparency
 	end
 
 	function controller:Update(newOptions)
 		newOptions = newOptions or {}
-		if newOptions.title ~= nil then
-			options.title = tostring(newOptions.title)
+
+		if newOptions.title ~= nil or newOptions.Title ~= nil then
+			options.title = tostring(newOptions.title or newOptions.Title)
 			title.Text = options.title
 		end
-		if typeof(newOptions.default) == "Color3" then
-			self:Set(newOptions.default, false)
-		elseif typeof(newOptions.color3) == "Color3" then
-			self:Set(newOptions.color3, false)
+
+		local newColor = newOptions.default or newOptions.color3 or newOptions.Color
+		if typeof(newColor) == "Color3" then
+			options.color3 = newColor
 		end
+
+		local newTransparency = newOptions.transparency
+		if newTransparency == nil then newTransparency = newOptions.Transparency end
+		if newTransparency ~= nil then
+			options.transparency = math.clamp(tonumber(newTransparency) or options.transparency, 0, 1)
+		end
+
 		if typeof(newOptions.callback) == "function" then
 			options.callback = newOptions.callback
+		elseif typeof(newOptions.Callback) == "function" then
+			options.callback = newOptions.Callback
 		end
+
+		refreshAll()
 		return self
 	end
 
@@ -2846,5 +3518,31 @@ function Section:addLabel(data)
 end
 
 Section.AddLabel = Section.addLabel
+
+--[[
+CLIENT OPTIONS:
+local Window = Library:CreateWindow({
+	uiScale = 0.9,          -- 0.55 to 1.35
+	autoResponsive = true, -- automatically adapts for phones/tablets
+	sidebarCollapsed = false,
+	mobileBreakpoint = 700,
+})
+
+Window:SetScale(0.85)
+Window:SetSidebarCollapsed(true)
+Window:ToggleSidebar()
+Window:SetAutoResponsive(true)
+
+MULTI DROPDOWN:
+Section:AddMultiDropdown({
+	title = "Targets",
+	list = {"Players", "NPCs", "Objects"},
+	default = {"Players", "NPCs"},
+	max = 3, -- optional
+	callback = function(selectedValues, changedValue)
+		print(selectedValues, changedValue)
+	end,
+})
+]]
 
 return Library
