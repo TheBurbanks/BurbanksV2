@@ -911,21 +911,54 @@ local function createInfoHint(section, parent, infoText, rightInset)
 	end
 
 	local window = section.library
+
+	local module = parent
+	while module and module.Parent ~= section.moduleContainer do
+		module = module.Parent
+	end
+
+	if not module then
+		module = parent
+	end
+
 	local icon = create("TextButton", {
-		Parent = parent,
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -(rightInset or 34), 0.5, 0),
-		Size = UDim2.fromOffset(16, 16),
+		Parent = section.container,
+		AnchorPoint = Vector2.new(0, 0.5),
+		Size = UDim2.fromOffset(24, 24),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		AutoButtonColor = false,
 		Font = Enum.Font.GothamBold,
 		Text = "ⓘ",
-		TextSize = 12,
-		ZIndex = 25,
+		TextSize = 18,
+		ZIndex = 100,
 	})
-	bindTheme(window, icon, "TextColor3", "Muted")
-	icon.TextTransparency = 0.2
+	bindTheme(window, icon, "TextColor3", "Accent")
+	icon.TextTransparency = 0
+
+	local function updateIconPosition()
+		if not module
+			or not module.Parent
+			or not section.container
+			or not section.container.Parent then
+			return
+		end
+
+		local modulePos = module.AbsolutePosition
+		local moduleSize = module.AbsoluteSize
+		local sectionPos = section.container.AbsolutePosition
+
+		icon.Position = UDim2.fromOffset(
+			modulePos.X - sectionPos.X + moduleSize.X + 5,
+			modulePos.Y - sectionPos.Y + 19
+		)
+	end
+
+	updateIconPosition()
+
+	module:GetPropertyChangedSignal("AbsolutePosition"):Connect(updateIconPosition)
+	module:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateIconPosition)
+	section.container:GetPropertyChangedSignal("AbsolutePosition"):Connect(updateIconPosition)
 
 	local tooltip = create("Frame", {
 		Parent = window.container,
@@ -937,9 +970,15 @@ local function createInfoHint(section, parent, infoText, rightInset)
 	corner(tooltip, 8)
 
 	local tooltipStroke = stroke(tooltip, window.theme.Stroke, 0.15, 1)
-	bindTheme(window, tooltipStroke, "Color", "Stroke")
+	bindTheme(window, tooltipStroke, "Color", "Accent")
 
-	local tooltipText = createLabel(window, tooltip, tostring(infoText), 11, Enum.Font.Gotham)
+	local tooltipText = createLabel(
+		window,
+		tooltip,
+		tostring(infoText),
+		11,
+		Enum.Font.Gotham
+	)
 	tooltipText.Position = UDim2.fromOffset(8, 6)
 	tooltipText.TextWrapped = true
 	tooltipText.TextXAlignment = Enum.TextXAlignment.Left
@@ -950,6 +989,7 @@ local function createInfoHint(section, parent, infoText, rightInset)
 
 	local function updateTooltip()
 		local maxWidth = 220
+
 		local firstPass = TextService:GetTextSize(
 			tostring(infoText),
 			11,
@@ -958,6 +998,7 @@ local function createInfoHint(section, parent, infoText, rightInset)
 		)
 
 		local width = math.clamp(firstPass.X + 20, 120, maxWidth)
+
 		local bounds = TextService:GetTextSize(
 			tostring(infoText),
 			11,
@@ -973,23 +1014,32 @@ local function createInfoHint(section, parent, infoText, rightInset)
 		local camera = workspace.CurrentCamera
 		local viewport = camera and camera.ViewportSize or Vector2.new(1920, 1080)
 
-		local x = iconPos.X - width + iconSize.X
-		local y = iconPos.Y - (bounds.Y + 14) - 6
+		local x = iconPos.X + iconSize.X + 7
+		local y = iconPos.Y - 2
+
+		if x + width > viewport.X - 8 then
+			x = iconPos.X - width - 7
+		end
 
 		if x < 8 then
 			x = 8
-		elseif x + width > viewport.X - 8 then
-			x = viewport.X - width - 8
+		end
+
+		if y + bounds.Y + 14 > viewport.Y - 8 then
+			y = viewport.Y - bounds.Y - 22
 		end
 
 		if y < 8 then
-			y = iconPos.Y + iconSize.Y + 6
+			y = 8
 		end
 
 		tooltip.Position = UDim2.fromOffset(x, y)
 	end
 
 	icon.MouseEnter:Connect(function()
+		tween(icon, 0.1, {
+			TextTransparency = 0,
+		})
 		updateTooltip()
 		tooltip.Visible = true
 	end)
@@ -997,12 +1047,6 @@ local function createInfoHint(section, parent, infoText, rightInset)
 	icon.MouseLeave:Connect(function()
 		tooltip.Visible = false
 	end)
-
-	if parent:IsA("GuiObject") then
-		parent.MouseLeave:Connect(function()
-			tooltip.Visible = false
-		end)
-	end
 
 	return icon, tooltip
 end
