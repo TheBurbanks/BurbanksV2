@@ -924,14 +924,14 @@ local function createInfoHint(section, parent, infoText, rightInset)
 	local icon = create("TextButton", {
 		Parent = module,
 		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -8, 0.5, 0),
-		Size = UDim2.fromOffset(24, 24),
+		Position = UDim2.new(1, -4, 0.5, 0),
+		Size = UDim2.fromOffset(22, 22),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		AutoButtonColor = false,
 		Font = Enum.Font.GothamBold,
 		Text = "ⓘ",
-		TextSize = 18,
+		TextSize = 17,
 		ZIndex = 100,
 	})
 	bindTheme(window, icon, "TextColor3", "Accent")
@@ -2524,8 +2524,8 @@ function Page:addSection(data)
 
 	local moduleContainer = create("Frame", {
 		Parent = card,
-		Position = UDim2.fromOffset(10, 40),
-		Size = UDim2.new(1, -20, 0, 0),
+		Position = UDim2.fromOffset(8, 40),
+		Size = UDim2.new(1, -16, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
 	})
@@ -2567,12 +2567,12 @@ function Section:addButton(data)
 	})
 
 	local infoText = getInfoText(data)
-	local title = createBoxedTitle(self, button, options.title, infoText and 62 or 44)
+	local title = createBoxedTitle(self, button, options.title, infoText and 86 or 44)
 	createInfoHint(self, button, infoText, 36)
 
 	local arrow = createLabel(self.library, button, "›", 18, Enum.Font.GothamBold)
 	arrow.AnchorPoint = Vector2.new(1, 0.5)
-	arrow.Position = UDim2.new(1, -12, 0.5, 0)
+	arrow.Position = UDim2.new(1, infoText and -30 or -12, 0.5, 0)
 	arrow.Size = UDim2.fromOffset(18, 24)
 	arrow.TextXAlignment = Enum.TextXAlignment.Center
 	bindTheme(self.library, arrow, "TextColor3", "Accent")
@@ -2636,13 +2636,13 @@ function Section:addToggle(data)
 	})
 
 	local infoText = getInfoText(data)
-	local title = createBoxedTitle(self, button, options.title, infoText and 92 or 70)
+	local title = createBoxedTitle(self, button, options.title, infoText and 118 or 70)
 	createInfoHint(self, button, infoText, 66)
 
 	local track = create("Frame", {
 		Parent = button,
 		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -12, 0.5, 0),
+		Position = UDim2.new(1, infoText and -34 or -12, 0.5, 0),
 		Size = UDim2.fromOffset(44, 22),
 		BorderSizePixel = 0,
 	})
@@ -2740,7 +2740,7 @@ function Section:addTextbox(data)
 	module.ClipsDescendants = true
 
 	local infoText = getInfoText(data)
-	local title = createBoxedTitle(self, module, options.title, infoText and 190 or 170)
+	local title = createBoxedTitle(self, module, options.title, infoText and 212 or 170)
 	title.TextTruncate = Enum.TextTruncate.AtEnd
 	createInfoHint(self, module, infoText, 168)
 
@@ -2840,11 +2840,12 @@ function Section:addTextbox(data)
 			holder.Size = UDim2.new(1, -20, 0, 24)
 		else
 			baseHeight = collapsedHeight
-			local inputWidth = math.clamp(math.floor(width * 0.42), 112, 150)
+			local inputWidth = math.clamp(math.floor(width * 0.40), 112, 146)
+			local rightInset = infoText and 32 or 10
 			title.Position = UDim2.fromOffset(12, 0)
-			title.Size = UDim2.new(1, -(inputWidth + 30), 1, 0)
+			title.Size = UDim2.new(1, -(inputWidth + rightInset + 20), 1, 0)
 			holder.AnchorPoint = Vector2.new(1, 0)
-			holder.Position = UDim2.new(1, -10, 0, 7)
+			holder.Position = UDim2.new(1, -rightInset, 0, 7)
 			holder.Size = UDim2.fromOffset(inputWidth, 24)
 		end
 
@@ -3076,8 +3077,10 @@ function Section:addSlider(data)
 	options.value = math.clamp(options.value or options.min, options.min, options.max)
 
 	local module = createBoxedModule(self, 54)
-	local title = createBoxedTitle(self, module, options.title, 74)
-	title.Size = UDim2.new(1, -86, 0, 28)
+	local infoText = getInfoText(data)
+	local title = createBoxedTitle(self, module, options.title, infoText and 100 or 74)
+	title.Size = UDim2.new(1, infoText and -112 or -86, 0, 28)
+	createInfoHint(self, module, infoText, 76)
 
 	local valueLabel = createLabel(
 		self.library,
@@ -3087,7 +3090,7 @@ function Section:addSlider(data)
 		Enum.Font.GothamBold
 	)
 	valueLabel.AnchorPoint = Vector2.new(1, 0)
-	valueLabel.Position = UDim2.new(1, -12, 0, 3)
+	valueLabel.Position = UDim2.new(1, infoText and -32 or -12, 0, 3)
 	valueLabel.Size = UDim2.fromOffset(58, 24)
 	valueLabel.TextXAlignment = Enum.TextXAlignment.Right
 	bindTheme(self.library, valueLabel, "TextColor3", "Accent")
@@ -3229,12 +3232,14 @@ function Section:addKeybind(data)
 		AutoButtonColor = false,
 	})
 
-	local title = createBoxedTitle(self, button, options.title, 120)
+	local infoText = getInfoText(data)
+	local title = createBoxedTitle(self, button, options.title, infoText and 148 or 120)
+	createInfoHint(self, button, infoText, 108)
 
 	local keyBox = create("TextLabel", {
 		Parent = button,
 		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -10, 0.5, 0),
+		Position = UDim2.new(1, infoText and -32 or -10, 0.5, 0),
 		Size = UDim2.fromOffset(90, 22),
 		BorderSizePixel = 0,
 		Font = Enum.Font.GothamBold,
@@ -3355,7 +3360,7 @@ function Section:addDropdown(data)
 		self,
 		header,
 		options.selected and tostring(options.selected) or options.title,
-		infoText and 70 or 48
+		infoText and 94 or 48
 	)
 	createInfoHint(self, header, infoText, 40)
 
@@ -3367,7 +3372,7 @@ function Section:addDropdown(data)
 		Enum.Font.GothamBold
 	)
 	arrow.AnchorPoint = Vector2.new(1, 0.5)
-	arrow.Position = UDim2.new(1, -12, 0.5, 0)
+	arrow.Position = UDim2.new(1, infoText and -32 or -12, 0.5, 0)
 	arrow.Size = UDim2.fromOffset(20, 20)
 	arrow.TextXAlignment = Enum.TextXAlignment.Center
 	arrow.TextYAlignment = Enum.TextYAlignment.Center
@@ -3584,12 +3589,12 @@ function Section:addMultiDropdown(data)
 	})
 
 	local infoText = getInfoText(data)
-	local title = createBoxedTitle(self, header, options.title, infoText and 70 or 48)
+	local title = createBoxedTitle(self, header, options.title, infoText and 94 or 48)
 	createInfoHint(self, header, infoText, 40)
 
 	local arrow = createLabel(self.library, header, "v", 15, Enum.Font.GothamBold)
 	arrow.AnchorPoint = Vector2.new(1, 0.5)
-	arrow.Position = UDim2.new(1, -12, 0.5, 0)
+	arrow.Position = UDim2.new(1, infoText and -32 or -12, 0.5, 0)
 	arrow.Size = UDim2.fromOffset(20, 20)
 	arrow.TextXAlignment = Enum.TextXAlignment.Center
 	bindTheme(self.library, arrow, "TextColor3", "Muted")
@@ -3888,13 +3893,13 @@ function Section:addColorPicker(data)
 	})
 
 	local infoText = getInfoText(data)
-	local title = createBoxedTitle(self, header, options.title, infoText and 80 or 58)
+	local title = createBoxedTitle(self, header, options.title, infoText and 104 or 58)
 	createInfoHint(self, header, infoText, 50)
 
 	local preview = create("Frame", {
 		Parent = header,
 		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -12, 0.5, 0),
+		Position = UDim2.new(1, infoText and -32 or -12, 0.5, 0),
 		Size = UDim2.fromOffset(24, 24),
 		BorderSizePixel = 0,
 		BackgroundColor3 = options.color3,
