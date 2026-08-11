@@ -1096,6 +1096,23 @@ function Library.new(data)
 	self.startupSubtitle = tostring(data.startupSubtitle or data.StartupSubtitle or self.subtitle)
 	self.startupVersion = tostring(data.startupVersion or data.StartupVersion or "Loading interface")
 
+
+	-- Optional client-configurable key system.
+	local keyData = data.keySystem or data.KeySystem or {}
+	self.keySystem = keyData
+	self.keyEnabled = keyData.enabled == true or keyData.Enabled == true
+	self.keyValue = tostring(keyData.key or keyData.Key or "")
+	self.keyTitle = tostring(keyData.title or keyData.Title or self.title)
+	self.keySubtitle = tostring(keyData.subtitle or keyData.Subtitle or "KEY SYSTEM")
+	self.keyDescription = tostring(keyData.description or keyData.Description or "Enter your access key to continue.")
+	self.keyPlaceholder = tostring(keyData.placeholder or keyData.Placeholder or "Enter key...")
+	self.keyButtonText = tostring(keyData.buttonText or keyData.ButtonText or "VERIFY KEY")
+	self.keyGetButtonText = tostring(keyData.getKeyButtonText or keyData.GetKeyButtonText or "GET KEY")
+	self.keyGetUrl = tostring(keyData.getKeyUrl or keyData.GetKeyUrl or "")
+	self.keyRemember = keyData.remember == true or keyData.Remember == true
+	self.keyFileName = tostring(keyData.fileName or keyData.FileName or (self.title:gsub("%W+", "_") .. "_key.txt"))
+	self.keyValidate = keyData.validate or keyData.Validate
+
 	self.uiScale = math.clamp(tonumber(data.uiScale or data.UIScale or data.scale or data.Scale) or 1, 0.55, 1.35)
 	self.autoResponsive = data.autoResponsive ~= false and data.AutoResponsive ~= false
 	self.sidebarCollapsed = data.sidebarCollapsed == true or data.SidebarCollapsed == true
@@ -1238,6 +1255,251 @@ function Library.new(data)
 		corner(startupProgressFill, 4)
 	end
 
+
+	local keyOverlay
+	local keyCard
+	local keyCardScale
+	local keyInput
+	local keyStatus
+
+	if self.keyEnabled then
+		keyOverlay = create("Frame", {
+			Name = "KeySystemOverlay",
+			Parent = screenGui,
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Visible = not self.startupMenu,
+			ZIndex = 300,
+		})
+
+		keyCard = create("Frame", {
+			Name = "KeySystemCard",
+			Parent = keyOverlay,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.fromOffset(390, 250),
+			BorderSizePixel = 0,
+			ZIndex = 301,
+		})
+		bindTheme(self, keyCard, "BackgroundColor3", "Background2")
+		corner(keyCard, 14)
+		local keyStroke = stroke(keyCard, self.theme.Stroke, 0.25, 1)
+		bindTheme(self, keyStroke, "Color", "Stroke")
+
+		keyCardScale = create("UIScale", {Parent = keyCard, Scale = 0.96})
+
+		local keyLogoHolder = create("Frame", {
+			Parent = keyCard,
+			Position = UDim2.fromOffset(18, 18),
+			Size = UDim2.fromOffset(48, 48),
+			BorderSizePixel = 0,
+			ZIndex = 302,
+		})
+		bindTheme(self, keyLogoHolder, "BackgroundColor3", "Card")
+		corner(keyLogoHolder, 11)
+		local keyLogoStroke = stroke(keyLogoHolder, self.theme.Stroke, 0.25, 1)
+		bindTheme(self, keyLogoStroke, "Color", "Accent")
+
+		local keyLogo = create("ImageLabel", {
+			Parent = keyLogoHolder,
+			Position = UDim2.fromOffset(4, 4),
+			Size = UDim2.new(1, -8, 1, -8),
+			BackgroundTransparency = 1,
+			Image = self.logoImageValue,
+			ScaleType = Enum.ScaleType.Stretch,
+			Visible = self.logoImageValue ~= "",
+			ZIndex = 303,
+		})
+		keyLogo.ImageColor3 = Color3.fromRGB(255, 255, 255)
+
+		local keyLogoText = createLabel(self, keyLogoHolder, self.logoTextValue, 18, Enum.Font.GothamBold)
+		keyLogoText.Size = UDim2.fromScale(1, 1)
+		keyLogoText.TextXAlignment = Enum.TextXAlignment.Center
+		keyLogoText.Visible = self.logoImageValue == ""
+		keyLogoText.ZIndex = 303
+		bindTheme(self, keyLogoText, "TextColor3", "Accent")
+
+		local keyTitleLabel = createLabel(self, keyCard, self.keyTitle, 16, Enum.Font.GothamBold)
+		keyTitleLabel.Position = UDim2.fromOffset(78, 17)
+		keyTitleLabel.Size = UDim2.new(1, -96, 0, 24)
+		keyTitleLabel.ZIndex = 302
+
+		local keySubtitleLabel = createLabel(self, keyCard, self.keySubtitle, 9, Enum.Font.GothamBold)
+		keySubtitleLabel.Position = UDim2.fromOffset(78, 40)
+		keySubtitleLabel.Size = UDim2.new(1, -96, 0, 18)
+		keySubtitleLabel.ZIndex = 302
+		bindTheme(self, keySubtitleLabel, "TextColor3", "Muted")
+		keySubtitleLabel.TextTransparency = 0.35
+
+		local keyDescriptionLabel = createLabel(self, keyCard, self.keyDescription, 10, Enum.Font.Gotham)
+		keyDescriptionLabel.Position = UDim2.fromOffset(18, 80)
+		keyDescriptionLabel.Size = UDim2.new(1, -36, 0, 18)
+		keyDescriptionLabel.ZIndex = 302
+		bindTheme(self, keyDescriptionLabel, "TextColor3", "Muted")
+		keyDescriptionLabel.TextTransparency = 0.2
+
+		local inputHolder = create("Frame", {
+			Parent = keyCard,
+			Position = UDim2.fromOffset(18, 108),
+			Size = UDim2.new(1, -36, 0, 42),
+			BorderSizePixel = 0,
+			ZIndex = 302,
+		})
+		bindTheme(self, inputHolder, "BackgroundColor3", "Card")
+		corner(inputHolder, 9)
+		local inputStroke = stroke(inputHolder, self.theme.Stroke, 0.45, 1)
+		bindTheme(self, inputStroke, "Color", "Stroke")
+
+		keyInput = create("TextBox", {
+			Parent = inputHolder,
+			Position = UDim2.fromOffset(12, 0),
+			Size = UDim2.new(1, -24, 1, 0),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ClearTextOnFocus = false,
+			Font = Enum.Font.GothamMedium,
+			PlaceholderText = self.keyPlaceholder,
+			Text = "",
+			TextSize = 12,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			ZIndex = 303,
+		})
+		bindTheme(self, keyInput, "TextColor3", "Text")
+		bindTheme(self, keyInput, "PlaceholderColor3", "Muted")
+
+		local verifyButton = create("TextButton", {
+			Parent = keyCard,
+			Position = UDim2.fromOffset(18, 162),
+			Size = self.keyGetUrl ~= "" and UDim2.new(0.62, -22, 0, 38) or UDim2.new(1, -36, 0, 38),
+			BorderSizePixel = 0,
+			AutoButtonColor = false,
+			Font = Enum.Font.GothamBold,
+			Text = self.keyButtonText,
+			TextSize = 11,
+			ZIndex = 302,
+		})
+		bindTheme(self, verifyButton, "BackgroundColor3", "AccentDark")
+		bindTheme(self, verifyButton, "TextColor3", "Text")
+		corner(verifyButton, 9)
+
+		if self.keyGetUrl ~= "" then
+			local getKeyButton = create("TextButton", {
+				Parent = keyCard,
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, -18, 0, 162),
+				Size = UDim2.new(0.38, -4, 0, 38),
+				BorderSizePixel = 0,
+				AutoButtonColor = false,
+				Font = Enum.Font.GothamBold,
+				Text = self.keyGetButtonText,
+				TextSize = 11,
+				ZIndex = 302,
+			})
+			bindTheme(self, getKeyButton, "BackgroundColor3", "Card2")
+			bindTheme(self, getKeyButton, "TextColor3", "Text")
+			corner(getKeyButton, 9)
+			local getKeyStroke = stroke(getKeyButton, self.theme.Stroke, 0.45, 1)
+			bindTheme(self, getKeyStroke, "Color", "Stroke")
+			getKeyButton.MouseButton1Click:Connect(function()
+				if typeof(setclipboard) == "function" then
+					pcall(setclipboard, self.keyGetUrl)
+				end
+				if keyStatus then
+					keyStatus.Text = "Key link copied to clipboard."
+					bindTheme(self, keyStatus, "TextColor3", "Accent")
+				end
+			end)
+		end
+
+		keyStatus = createLabel(self, keyCard, "", 9, Enum.Font.GothamMedium)
+		keyStatus.Position = UDim2.fromOffset(18, 210)
+		keyStatus.Size = UDim2.new(1, -36, 0, 20)
+		keyStatus.TextXAlignment = Enum.TextXAlignment.Center
+		keyStatus.ZIndex = 302
+		bindTheme(self, keyStatus, "TextColor3", "Muted")
+
+		self.keyOverlay = keyOverlay
+		self.keyCard = keyCard
+		self.keyInput = keyInput
+		self.keyStatus = keyStatus
+		self.keyVerified = false
+
+		local function validateKey(candidate)
+			if typeof(self.keyValidate) == "function" then
+				local ok, result = pcall(self.keyValidate, candidate, self)
+				return ok and result == true
+			end
+			return candidate == self.keyValue
+		end
+
+		local function rememberKey(candidate)
+			if not self.keyRemember then return end
+			if typeof(writefile) == "function" then
+				pcall(writefile, self.keyFileName, candidate)
+			end
+		end
+
+		local function animateMainFromKey()
+			if not self.main or not self.main.Parent then return end
+			self.main.Visible = true
+			local finalPosition = UDim2.fromScale(0.5, 0.5)
+			local finalTransparency = 0.055
+			self.main.Position = UDim2.new(0.5, 0, 0.5, 16)
+			self.main.BackgroundTransparency = 1
+			self.startupScale.Scale = math.max(0.5, self.uiScale * 0.9)
+			tween(self.main, self.startupDuration, {
+				Position = finalPosition,
+				BackgroundTransparency = finalTransparency,
+			}, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+			tween(self.startupScale, self.startupDuration, {Scale = self.uiScale}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			self.openPosition = finalPosition
+			self.openSize = self.main.Size
+		end
+
+		local function submitKey()
+			local candidate = tostring(keyInput.Text or ""):match("^%s*(.-)%s*$")
+			if candidate == "" then
+				keyStatus.Text = "Enter a key first."
+				bindTheme(self, keyStatus, "TextColor3", "Danger")
+				return
+			end
+
+			if validateKey(candidate) then
+				self.keyVerified = true
+				rememberKey(candidate)
+				keyStatus.Text = "Access granted."
+				bindTheme(self, keyStatus, "TextColor3", "Accent")
+				tween(keyCardScale, 0.2, {Scale = 0.94}, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+				task.wait(0.16)
+				if keyOverlay and keyOverlay.Parent then keyOverlay:Destroy() end
+				animateMainFromKey()
+			else
+				keyStatus.Text = "Invalid key. Try again."
+				bindTheme(self, keyStatus, "TextColor3", "Danger")
+				tween(keyCard, 0.06, {Position = UDim2.new(0.5, -7, 0.5, 0)})
+				task.delay(0.07, function()
+					if keyCard and keyCard.Parent then tween(keyCard, 0.08, {Position = UDim2.fromScale(0.5, 0.5)}) end
+				end)
+			end
+		end
+
+		verifyButton.MouseButton1Click:Connect(submitKey)
+		keyInput.FocusLost:Connect(function(enterPressed)
+			if enterPressed then submitKey() end
+		end)
+
+		if self.keyRemember and typeof(readfile) == "function" and typeof(isfile) == "function" then
+			local ok, saved = pcall(function()
+				if isfile(self.keyFileName) then return readfile(self.keyFileName) end
+			end)
+			if ok and saved and validateKey(tostring(saved)) then
+				self.keyVerified = true
+				keyOverlay.Visible = false
+			end
+		end
+	end
+
 	local main = create("Frame", {
 		Name = "Main",
 		Parent = screenGui,
@@ -1246,7 +1508,7 @@ function Library.new(data)
 		Size = UDim2.fromOffset(760, 500),
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
-		Visible = not self.startupMenu,
+		Visible = not self.startupMenu and not self.keyEnabled,
 	})
 	bindTheme(self, main, "BackgroundColor3", "Background")
 	main.BackgroundTransparency = 0.055
@@ -1576,6 +1838,10 @@ function Library.new(data)
 	self.startupCard = startupCard
 	self.startupBlur = startupBlur
 
+	if self.keyEnabled and self.keyVerified and not self.startupMenu then
+		main.Visible = true
+	end
+
 	makeDraggable(topbar, main)
 
 	sidebarCollapse.MouseButton1Click:Connect(function()
@@ -1637,6 +1903,17 @@ function Library.new(data)
 			end
 
 			if not main.Parent then return end
+
+			if self.keyEnabled and not self.keyVerified then
+				if keyOverlay and keyOverlay.Parent then
+					keyOverlay.Visible = true
+					if keyCardScale then
+						keyCardScale.Scale = 0.94
+						tween(keyCardScale, 0.28, {Scale = 1}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+					end
+				end
+				return
+			end
 
 			main.Visible = true
 
@@ -1731,6 +2008,30 @@ function Library.new(data)
 
 	return self
 end
+
+
+function Library:IsKeyVerified()
+	return self.keyVerified == true
+end
+Library.isKeyVerified = Library.IsKeyVerified
+
+function Library:SetKey(value)
+	self.keyValue = tostring(value or "")
+	return self
+end
+Library.setKey = Library.SetKey
+
+function Library:ShowKeySystem()
+	if self.keyOverlay and self.keyOverlay.Parent then
+		self.main.Visible = false
+		self.keyOverlay.Visible = true
+		if self.keyCard then
+			self.keyCard.Position = UDim2.fromScale(0.5, 0.5)
+		end
+	end
+	return self
+end
+Library.showKeySystem = Library.ShowKeySystem
 
 function Library:SetScale(value)
 	self.uiScale = math.clamp(tonumber(value) or self.uiScale or 1, 0.55, 1.35)
