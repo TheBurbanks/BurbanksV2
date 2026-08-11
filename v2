@@ -1042,7 +1042,7 @@ function Library.new(data)
 	self.title = tostring(data.title or data.Title or "BURBANKS")
 	self.subtitle = tostring(data.subtitle or data.Subtitle or "PRIVATE BUILD")
 	self.logoTextValue = tostring(data.logoText or data.LogoText or "N")
-	self.logoImageValue = normalizeAssetId(data.logo or data.Logo or data.logoImage or data.LogoImage or 80419077988140)
+	self.logoImageValue = normalizeAssetId(data.logo or data.Logo or data.logoImage or data.LogoImage or 77496338127881)
 	self.backgroundImageValue = normalizeAssetId(data.background or data.Background or data.backgroundImage or data.BackgroundImage)
 	self.backgroundTransparency = math.clamp(tonumber(data.backgroundTransparency or data.BackgroundTransparency) or 0.35, 0, 1)
 
@@ -1180,8 +1180,8 @@ function Library.new(data)
 
 		startupLogo = create("ImageLabel", {
 			Parent = logoHolder,
-			Position = UDim2.fromOffset(7, 7),
-			Size = UDim2.new(1, -14, 1, -14),
+			Position = UDim2.fromOffset(3, 3),
+			Size = UDim2.new(1, -6, 1, -6),
 			BackgroundTransparency = 1,
 			Image = self.logoImageValue,
 			ImageTransparency = 1,
@@ -1189,6 +1189,7 @@ function Library.new(data)
 			ZIndex = 203,
 		})
 		startupLogo.ImageColor3 = Color3.fromRGB(255, 255, 255)
+		self.startupLogo = startupLogo
 
 		startupTitleLabel = createLabel(self, startupCard, self.startupTitle, 18, Enum.Font.GothamBold)
 		startupTitleLabel.AnchorPoint = Vector2.new(0.5, 0)
@@ -1305,8 +1306,8 @@ function Library.new(data)
 	local logoImage = create("ImageLabel", {
 		Name = "LogoImage",
 		Parent = logoBox,
-		Position = UDim2.fromOffset(3, 3),
-		Size = UDim2.new(1, -6, 1, -6),
+		Position = UDim2.fromOffset(0, 0),
+		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		Image = self.logoImageValue,
 		ScaleType = Enum.ScaleType.Fit,
@@ -1896,13 +1897,29 @@ end
 function Library:setLogo(assetId, fallbackText)
 	local image = normalizeAssetId(assetId)
 	self.logoImageValue = image
+
 	if fallbackText ~= nil then
 		self.logoTextValue = tostring(fallbackText)
-		self.logoText.Text = self.logoTextValue
+		if self.logoText then
+			self.logoText.Text = self.logoTextValue
+		end
 	end
-	self.logoImage.Image = image
-	self.logoImage.Visible = image ~= ""
-	self.logoText.Visible = image == ""
+
+	if self.logoImage then
+		self.logoImage.Image = image
+		self.logoImage.ImageColor3 = Color3.fromRGB(255, 255, 255)
+		self.logoImage.Visible = image ~= ""
+	end
+
+	if self.startupLogo then
+		self.startupLogo.Image = image
+		self.startupLogo.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	end
+
+	if self.logoText then
+		self.logoText.Visible = image == ""
+	end
+
 	return image ~= ""
 end
 Library.SetLogo = Library.setLogo
