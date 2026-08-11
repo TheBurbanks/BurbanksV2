@@ -889,6 +889,117 @@ local function createBoxedTitle(section, parent, title, rightPadding)
 	return label
 end
 
+local function getInfoText(data)
+	return data.info
+		or data.Info
+		or data.description
+		or data.Description
+		or data.comment
+		or data.Comment
+end
+
+local function createInfoHint(section, parent, infoText, rightInset)
+	if not infoText or tostring(infoText) == "" then
+		return nil
+	end
+
+	local window = section.library
+	local icon = create("TextButton", {
+		Parent = parent,
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -(rightInset or 34), 0.5, 0),
+		Size = UDim2.fromOffset(16, 16),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		AutoButtonColor = false,
+		Font = Enum.Font.GothamBold,
+		Text = "ⓘ",
+		TextSize = 12,
+		ZIndex = 25,
+	})
+	bindTheme(window, icon, "TextColor3", "Muted")
+	icon.TextTransparency = 0.2
+
+	local tooltip = create("Frame", {
+		Parent = window.container,
+		Visible = false,
+		BorderSizePixel = 0,
+		ZIndex = 500,
+	})
+	bindTheme(window, tooltip, "BackgroundColor3", "Background2")
+	corner(tooltip, 8)
+
+	local tooltipStroke = stroke(tooltip, window.theme.Stroke, 0.15, 1)
+	bindTheme(window, tooltipStroke, "Color", "Stroke")
+
+	local tooltipText = createLabel(window, tooltip, tostring(infoText), 11, Enum.Font.Gotham)
+	tooltipText.Position = UDim2.fromOffset(8, 6)
+	tooltipText.TextWrapped = true
+	tooltipText.TextXAlignment = Enum.TextXAlignment.Left
+	tooltipText.TextYAlignment = Enum.TextYAlignment.Top
+	tooltipText.ZIndex = 501
+	bindTheme(window, tooltipText, "TextColor3", "Text")
+	tooltipText.TextTransparency = 0.08
+
+	local function updateTooltip()
+		local maxWidth = 220
+		local firstPass = TextService:GetTextSize(
+			tostring(infoText),
+			11,
+			Enum.Font.Gotham,
+			Vector2.new(maxWidth, 1000)
+		)
+
+		local width = math.clamp(firstPass.X + 20, 120, maxWidth)
+		local bounds = TextService:GetTextSize(
+			tostring(infoText),
+			11,
+			Enum.Font.Gotham,
+			Vector2.new(width - 16, 1000)
+		)
+
+		tooltip.Size = UDim2.fromOffset(width, bounds.Y + 14)
+		tooltipText.Size = UDim2.fromOffset(width - 16, bounds.Y + 2)
+
+		local iconPos = icon.AbsolutePosition
+		local iconSize = icon.AbsoluteSize
+		local camera = workspace.CurrentCamera
+		local viewport = camera and camera.ViewportSize or Vector2.new(1920, 1080)
+
+		local x = iconPos.X - width + iconSize.X
+		local y = iconPos.Y - (bounds.Y + 14) - 6
+
+		if x < 8 then
+			x = 8
+		elseif x + width > viewport.X - 8 then
+			x = viewport.X - width - 8
+		end
+
+		if y < 8 then
+			y = iconPos.Y + iconSize.Y + 6
+		end
+
+		tooltip.Position = UDim2.fromOffset(x, y)
+	end
+
+	icon.MouseEnter:Connect(function()
+		updateTooltip()
+		tooltip.Visible = true
+	end)
+
+	icon.MouseLeave:Connect(function()
+		tooltip.Visible = false
+	end)
+
+	if parent:IsA("GuiObject") then
+		parent.MouseLeave:Connect(function()
+			tooltip.Visible = false
+		end)
+	end
+
+	return icon, tooltip
+end
+
 local Library = {}
 Library.__index = Library
 
@@ -2430,7 +2541,9 @@ function Section:addButton(data)
 		AutoButtonColor = false,
 	})
 
-	local title = createBoxedTitle(self, button, options.title, 44)
+	local infoText = getInfoText(data)
+	local title = createBoxedTitle(self, button, options.title, infoText and 62 or 44)
+	createInfoHint(self, button, infoText, 36)
 
 	local arrow = createLabel(self.library, button, "›", 18, Enum.Font.GothamBold)
 	arrow.AnchorPoint = Vector2.new(1, 0.5)
@@ -2497,7 +2610,9 @@ function Section:addToggle(data)
 		AutoButtonColor = false,
 	})
 
-	local title = createBoxedTitle(self, button, options.title, 70)
+	local infoText = getInfoText(data)
+	local title = createBoxedTitle(self, button, options.title, infoText and 92 or 70)
+	createInfoHint(self, button, infoText, 66)
 
 	local track = create("Frame", {
 		Parent = button,
@@ -2599,8 +2714,10 @@ function Section:addTextbox(data)
 	local module = createBoxedModule(self, collapsedHeight)
 	module.ClipsDescendants = true
 
-	local title = createBoxedTitle(self, module, options.title, 170)
+	local infoText = getInfoText(data)
+	local title = createBoxedTitle(self, module, options.title, infoText and 190 or 170)
 	title.TextTruncate = Enum.TextTruncate.AtEnd
+	createInfoHint(self, module, infoText, 168)
 
 	local holder = create("Frame", {
 		Parent = module,
@@ -3208,12 +3325,14 @@ function Section:addDropdown(data)
 		AutoButtonColor = false,
 	})
 
+	local infoText = getInfoText(data)
 	local title = createBoxedTitle(
 		self,
 		header,
 		options.selected and tostring(options.selected) or options.title,
-		48
+		infoText and 70 or 48
 	)
+	createInfoHint(self, header, infoText, 40)
 
 	local arrow = createLabel(
 		self.library,
@@ -3439,7 +3558,9 @@ function Section:addMultiDropdown(data)
 		AutoButtonColor = false,
 	})
 
-	local title = createBoxedTitle(self, header, options.title, 48)
+	local infoText = getInfoText(data)
+	local title = createBoxedTitle(self, header, options.title, infoText and 70 or 48)
+	createInfoHint(self, header, infoText, 40)
 
 	local arrow = createLabel(self.library, header, "v", 15, Enum.Font.GothamBold)
 	arrow.AnchorPoint = Vector2.new(1, 0.5)
@@ -3708,6 +3829,7 @@ function Section:addThemeSelector(data)
 		title = tostring(data.title or data.Title or "Theme"),
 		list = self.library:getThemePresets(),
 		default = defaultTheme,
+		info = getInfoText(data),
 
 		callback = function(selectedTheme)
 			self.library:setThemePreset(selectedTheme)
@@ -3740,7 +3862,9 @@ function Section:addColorPicker(data)
 		AutoButtonColor = false,
 	})
 
-	local title = createBoxedTitle(self, header, options.title, 58)
+	local infoText = getInfoText(data)
+	local title = createBoxedTitle(self, header, options.title, infoText and 80 or 58)
+	createInfoHint(self, header, infoText, 50)
 
 	local preview = create("Frame", {
 		Parent = header,
