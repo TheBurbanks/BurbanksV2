@@ -1,14 +1,3 @@
---[[
-██████╗ ██╗   ██╗██████╗ ██████╗  █████╗ ███╗   ██╗██╗  ██╗███████╗
-██╔══██╗██║   ██║██╔══██╗██╔══██╗██╔══██╗████╗  ██║██║ ██╔╝██╔════╝
-██████╔╝██║   ██║██████╔╝██████╔╝███████║██╔██╗ ██║█████╔╝ ███████╗
-██╔══██╗██║   ██║██╔══██╗██╔══██╗██╔══██║██║╚██╗██║██╔═██╗ ╚════██║
-██████╔╝╚██████╔╝██║  ██║██████╔╝██║  ██║██║ ╚████║██║  ██╗███████║
-╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
--- ui made by azure :D
--- Converted to Neverlose style with dual-column card layout
-]]
-
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -17,7 +6,6 @@ local TextService = game:GetService("TextService")
 local LocalPlayer = Players.LocalPlayer
 assert(LocalPlayer, "Burbanks must run on the client.")
 
---// Lucide Roblox
 local LUCIDE_MODULE_URL = "https://github.com/latte-soft/lucide-roblox/releases/latest/download/lucide-roblox.luau"
 
 local Lucide
@@ -44,9 +32,6 @@ local function getLucide()
 	return nil
 end
 
--- ============================================================
--- NEVERLOSE THEME CONSTANTS
--- ============================================================
 local NL_THEME = {
 	Background = Color3.fromRGB(8, 8, 13),
 	Background2 = Color3.fromRGB(13, 17, 22),
@@ -62,8 +47,6 @@ local NL_THEME = {
 	Danger = Color3.fromRGB(255, 88, 105),
 }
 
--- Built-in selectable theme presets.
--- The original/current appearance is preserved as "Walled Waves".
 local THEME_PRESETS = {
 	["Walled Waves"] = {
 		Background = Color3.fromRGB(8, 8, 13),
@@ -163,93 +146,7 @@ local THEME_PRESETS = {
 		Muted = Color3.fromRGB(91, 101, 119),
 		Danger = Color3.fromRGB(210, 58, 76),
 	},
-	-- Kavo-inspired presets
-	["Kavo Dark"] = {
-		Background = Color3.fromRGB(24, 24, 24),
-		Background2 = Color3.fromRGB(30, 30, 30),
-		Sidebar = Color3.fromRGB(20, 20, 20),
-		Topbar = Color3.fromRGB(20, 20, 20),
-		Card = Color3.fromRGB(32, 32, 32),
-		Card2 = Color3.fromRGB(38, 38, 38),
-		Stroke = Color3.fromRGB(58, 58, 58),
-		Accent = Color3.fromRGB(0, 170, 255),
-		AccentDark = Color3.fromRGB(0, 95, 150),
-		Text = Color3.fromRGB(245, 245, 245),
-		Muted = Color3.fromRGB(170, 170, 170),
-		Danger = Color3.fromRGB(255, 90, 105),
-	},
-	["Kavo Blood"] = {
-		Background = Color3.fromRGB(22, 8, 10),
-		Background2 = Color3.fromRGB(31, 10, 13),
-		Sidebar = Color3.fromRGB(18, 7, 8),
-		Topbar = Color3.fromRGB(18, 7, 8),
-		Card = Color3.fromRGB(36, 13, 17),
-		Card2 = Color3.fromRGB(47, 17, 22),
-		Stroke = Color3.fromRGB(84, 29, 37),
-		Accent = Color3.fromRGB(210, 40, 58),
-		AccentDark = Color3.fromRGB(120, 20, 31),
-		Text = Color3.fromRGB(255, 241, 243),
-		Muted = Color3.fromRGB(198, 155, 162),
-		Danger = Color3.fromRGB(255, 65, 85),
-	},
-	["Kavo Grape"] = {
-		Background = Color3.fromRGB(18, 12, 25),
-		Background2 = Color3.fromRGB(25, 16, 35),
-		Sidebar = Color3.fromRGB(15, 10, 21),
-		Topbar = Color3.fromRGB(15, 10, 21),
-		Card = Color3.fromRGB(31, 20, 43),
-		Card2 = Color3.fromRGB(40, 25, 56),
-		Stroke = Color3.fromRGB(67, 43, 89),
-		Accent = Color3.fromRGB(157, 78, 221),
-		AccentDark = Color3.fromRGB(87, 37, 129),
-		Text = Color3.fromRGB(250, 245, 255),
-		Muted = Color3.fromRGB(191, 170, 208),
-		Danger = Color3.fromRGB(255, 88, 119),
-	},
-	["Kavo Ocean"] = {
-		Background = Color3.fromRGB(6, 18, 25),
-		Background2 = Color3.fromRGB(8, 27, 37),
-		Sidebar = Color3.fromRGB(5, 15, 21),
-		Topbar = Color3.fromRGB(5, 15, 21),
-		Card = Color3.fromRGB(10, 34, 47),
-		Card2 = Color3.fromRGB(13, 44, 60),
-		Stroke = Color3.fromRGB(25, 72, 94),
-		Accent = Color3.fromRGB(0, 170, 255),
-		AccentDark = Color3.fromRGB(0, 90, 145),
-		Text = Color3.fromRGB(239, 250, 255),
-		Muted = Color3.fromRGB(147, 190, 209),
-		Danger = Color3.fromRGB(255, 89, 104),
-	},
-	["Kavo Midnight"] = {
-		Background = Color3.fromRGB(8, 10, 18),
-		Background2 = Color3.fromRGB(12, 15, 27),
-		Sidebar = Color3.fromRGB(7, 9, 16),
-		Topbar = Color3.fromRGB(7, 9, 16),
-		Card = Color3.fromRGB(16, 20, 34),
-		Card2 = Color3.fromRGB(22, 27, 45),
-		Stroke = Color3.fromRGB(41, 48, 73),
-		Accent = Color3.fromRGB(88, 101, 242),
-		AccentDark = Color3.fromRGB(48, 57, 153),
-		Text = Color3.fromRGB(245, 247, 255),
-		Muted = Color3.fromRGB(160, 167, 195),
-		Danger = Color3.fromRGB(255, 86, 104),
-	},
-	["Kavo Light"] = {
-		Background = Color3.fromRGB(244, 246, 250),
-		Background2 = Color3.fromRGB(232, 236, 243),
-		Sidebar = Color3.fromRGB(249, 250, 252),
-		Topbar = Color3.fromRGB(249, 250, 252),
-		Card = Color3.fromRGB(255, 255, 255),
-		Card2 = Color3.fromRGB(239, 242, 247),
-		Stroke = Color3.fromRGB(196, 203, 214),
-		Accent = Color3.fromRGB(0, 122, 255),
-		AccentDark = Color3.fromRGB(0, 75, 165),
-		Text = Color3.fromRGB(28, 32, 40),
-		Muted = Color3.fromRGB(101, 109, 123),
-		Danger = Color3.fromRGB(212, 66, 83),
-	},
 
-	-- Extra Burbanks presets
 	["Discord"] = {
 		Background = Color3.fromRGB(30, 31, 34),
 		Background2 = Color3.fromRGB(35, 36, 40),
@@ -573,6 +470,146 @@ local THEME_PRESETS = {
 		Danger = Color3.fromRGB(255, 67, 88),
 	},
 
+	["Kavo Default"] = {
+		Background = Color3.fromRGB(36, 37, 43),
+		Background2 = Color3.fromRGB(36, 37, 43),
+		Sidebar = Color3.fromRGB(28, 29, 34),
+		Topbar = Color3.fromRGB(28, 29, 34),
+		Card = Color3.fromRGB(32, 32, 38),
+		Card2 = Color3.fromRGB(32, 32, 38),
+		Stroke = Color3.fromRGB(50, 50, 56),
+		Accent = Color3.fromRGB(74, 99, 135),
+		AccentDark = Color3.fromRGB(19, 44, 80),
+		Text = Color3.fromRGB(255, 255, 255),
+		Muted = Color3.fromRGB(144, 144, 146),
+		Danger = Color3.fromRGB(255, 80, 95),
+	},
+	["Kavo Dark"] = {
+		Background = Color3.fromRGB(0, 0, 0),
+		Background2 = Color3.fromRGB(0, 0, 0),
+		Sidebar = Color3.fromRGB(0, 0, 0),
+		Topbar = Color3.fromRGB(0, 0, 0),
+		Card = Color3.fromRGB(20, 20, 20),
+		Card2 = Color3.fromRGB(20, 20, 20),
+		Stroke = Color3.fromRGB(38, 38, 38),
+		Accent = Color3.fromRGB(64, 64, 64),
+		AccentDark = Color3.fromRGB(9, 9, 9),
+		Text = Color3.fromRGB(255, 255, 255),
+		Muted = Color3.fromRGB(138, 138, 138),
+		Danger = Color3.fromRGB(255, 80, 95),
+	},
+	["Kavo Light"] = {
+		Background = Color3.fromRGB(255, 255, 255),
+		Background2 = Color3.fromRGB(255, 255, 255),
+		Sidebar = Color3.fromRGB(200, 200, 200),
+		Topbar = Color3.fromRGB(200, 200, 200),
+		Card = Color3.fromRGB(224, 224, 224),
+		Card2 = Color3.fromRGB(224, 224, 224),
+		Stroke = Color3.fromRGB(196, 196, 196),
+		Accent = Color3.fromRGB(150, 150, 150),
+		AccentDark = Color3.fromRGB(95, 95, 95),
+		Text = Color3.fromRGB(0, 0, 0),
+		Muted = Color3.fromRGB(112, 112, 112),
+		Danger = Color3.fromRGB(255, 80, 95),
+	},
+	["Kavo Blood"] = {
+		Background = Color3.fromRGB(10, 10, 10),
+		Background2 = Color3.fromRGB(10, 10, 10),
+		Sidebar = Color3.fromRGB(5, 5, 5),
+		Topbar = Color3.fromRGB(5, 5, 5),
+		Card = Color3.fromRGB(20, 20, 20),
+		Card2 = Color3.fromRGB(20, 20, 20),
+		Stroke = Color3.fromRGB(38, 38, 38),
+		Accent = Color3.fromRGB(227, 27, 27),
+		AccentDark = Color3.fromRGB(172, 0, 0),
+		Text = Color3.fromRGB(255, 255, 255),
+		Muted = Color3.fromRGB(138, 138, 138),
+		Danger = Color3.fromRGB(255, 80, 95),
+	},
+	["Kavo Grape"] = {
+		Background = Color3.fromRGB(64, 50, 71),
+		Background2 = Color3.fromRGB(64, 50, 71),
+		Sidebar = Color3.fromRGB(36, 28, 41),
+		Topbar = Color3.fromRGB(36, 28, 41),
+		Card = Color3.fromRGB(74, 58, 84),
+		Card2 = Color3.fromRGB(74, 58, 84),
+		Stroke = Color3.fromRGB(92, 76, 102),
+		Accent = Color3.fromRGB(166, 71, 214),
+		AccentDark = Color3.fromRGB(111, 16, 159),
+		Text = Color3.fromRGB(255, 255, 255),
+		Muted = Color3.fromRGB(164, 156, 170),
+		Danger = Color3.fromRGB(255, 80, 95),
+	},
+	["Kavo Ocean"] = {
+		Background = Color3.fromRGB(26, 32, 58),
+		Background2 = Color3.fromRGB(26, 32, 58),
+		Sidebar = Color3.fromRGB(38, 45, 71),
+		Topbar = Color3.fromRGB(38, 45, 71),
+		Card = Color3.fromRGB(38, 45, 71),
+		Card2 = Color3.fromRGB(38, 45, 71),
+		Stroke = Color3.fromRGB(56, 63, 89),
+		Accent = Color3.fromRGB(86, 76, 251),
+		AccentDark = Color3.fromRGB(31, 21, 196),
+		Text = Color3.fromRGB(200, 200, 200),
+		Muted = Color3.fromRGB(119, 122, 136),
+		Danger = Color3.fromRGB(255, 80, 95),
+	},
+	["Kavo Midnight"] = {
+		Background = Color3.fromRGB(44, 62, 82),
+		Background2 = Color3.fromRGB(44, 62, 82),
+		Sidebar = Color3.fromRGB(57, 81, 105),
+		Topbar = Color3.fromRGB(57, 81, 105),
+		Card = Color3.fromRGB(52, 74, 95),
+		Card2 = Color3.fromRGB(52, 74, 95),
+		Stroke = Color3.fromRGB(70, 92, 113),
+		Accent = Color3.fromRGB(26, 189, 158),
+		AccentDark = Color3.fromRGB(0, 134, 103),
+		Text = Color3.fromRGB(255, 255, 255),
+		Muted = Color3.fromRGB(154, 164, 175),
+		Danger = Color3.fromRGB(255, 80, 95),
+	},
+	["Kavo Sentinel"] = {
+		Background = Color3.fromRGB(32, 32, 32),
+		Background2 = Color3.fromRGB(32, 32, 32),
+		Sidebar = Color3.fromRGB(24, 24, 24),
+		Topbar = Color3.fromRGB(24, 24, 24),
+		Card = Color3.fromRGB(24, 24, 24),
+		Card2 = Color3.fromRGB(24, 24, 24),
+		Stroke = Color3.fromRGB(42, 42, 42),
+		Accent = Color3.fromRGB(230, 35, 69),
+		AccentDark = Color3.fromRGB(175, 0, 14),
+		Text = Color3.fromRGB(119, 209, 138),
+		Muted = Color3.fromRGB(72, 116, 81),
+		Danger = Color3.fromRGB(255, 80, 95),
+	},
+	["Kavo Synapse"] = {
+		Background = Color3.fromRGB(13, 15, 12),
+		Background2 = Color3.fromRGB(13, 15, 12),
+		Sidebar = Color3.fromRGB(36, 38, 35),
+		Topbar = Color3.fromRGB(36, 38, 35),
+		Card = Color3.fromRGB(24, 24, 24),
+		Card2 = Color3.fromRGB(24, 24, 24),
+		Stroke = Color3.fromRGB(42, 42, 42),
+		Accent = Color3.fromRGB(46, 48, 43),
+		AccentDark = Color3.fromRGB(0, 0, 0),
+		Text = Color3.fromRGB(152, 99, 53),
+		Muted = Color3.fromRGB(88, 62, 38),
+		Danger = Color3.fromRGB(255, 80, 95),
+	},
+	["Kavo Serpent"] = {
+		Background = Color3.fromRGB(31, 41, 43),
+		Background2 = Color3.fromRGB(31, 41, 43),
+		Sidebar = Color3.fromRGB(22, 29, 31),
+		Topbar = Color3.fromRGB(22, 29, 31),
+		Card = Color3.fromRGB(22, 29, 31),
+		Card2 = Color3.fromRGB(22, 29, 31),
+		Stroke = Color3.fromRGB(40, 47, 49),
+		Accent = Color3.fromRGB(0, 166, 58),
+		AccentDark = Color3.fromRGB(0, 111, 3),
+		Text = Color3.fromRGB(255, 255, 255),
+		Muted = Color3.fromRGB(138, 142, 143),
+		Danger = Color3.fromRGB(255, 80, 95),
+	},
 }
 
 local function copyTable(source)
@@ -694,7 +731,6 @@ local function makeDraggable(handle, target)
 	local sizeTween
 	local settleTween
 
-	-- Higher values feel more responsive; lower values feel softer and floatier.
 	local DRAG_SMOOTHNESS = 22
 	local PICKUP_PIXELS = 4
 
@@ -723,7 +759,6 @@ local function makeDraggable(handle, target)
 		cancelTween(sizeTween)
 		cancelTween(settleTween)
 
-		-- Subtle pickup animation when the window is grabbed.
 		sizeTween = tween(
 			target,
 			0.12,
@@ -762,7 +797,6 @@ local function makeDraggable(handle, target)
 	RunService.RenderStepped:Connect(function(deltaTime)
 		if not dragging then return end
 
-		-- Frame-rate-independent easing toward the cursor.
 		local alpha = 1 - math.exp(-DRAG_SMOOTHNESS * deltaTime)
 		target.Position = target.Position:Lerp(desiredPosition, alpha)
 	end)
@@ -779,7 +813,6 @@ local function makeDraggable(handle, target)
 		cancelTween(sizeTween)
 		cancelTween(settleTween)
 
-		-- Gently settle into the final cursor position.
 		settleTween = tween(
 			target,
 			0.14,
@@ -788,7 +821,6 @@ local function makeDraggable(handle, target)
 			Enum.EasingDirection.Out
 		)
 
-		-- Return to the original size after release.
 		sizeTween = tween(
 			target,
 			0.16,
@@ -826,9 +858,6 @@ local function createLabel(window, parent, text, size, font)
 	return label
 end
 
--- ============================================================
--- BOXED MODULE CREATION
--- ============================================================
 local function createBoxedModule(section, height)
 	local holder = create("Frame", {
 		Parent = section.moduleContainer,
@@ -860,9 +889,6 @@ local function createBoxedTitle(section, parent, title, rightPadding)
 	return label
 end
 
--- ============================================================
--- LIBRARY CLASS
--- ============================================================
 local Library = {}
 Library.__index = Library
 
@@ -884,7 +910,6 @@ function Library.new(data)
 	self.backgroundImageValue = normalizeAssetId(data.background or data.Background or data.backgroundImage or data.BackgroundImage)
 	self.backgroundTransparency = math.clamp(tonumber(data.backgroundTransparency or data.BackgroundTransparency) or 0.35, 0, 1)
 
-	-- Dashboard header can be configured directly from the client.
 	local dashboardData = data.dashboard or data.Dashboard or {}
 	self.dashboardTitle = tostring(
 		dashboardData.title
@@ -903,7 +928,6 @@ function Library.new(data)
 
 	self.theme = copyTable(NL_THEME)
 
-	-- Starting theme preset can be chosen directly from CreateWindow.
 	self.startThemePreset = tostring(
 		data.themePreset
 		or data.ThemePreset
@@ -931,7 +955,6 @@ function Library.new(data)
 	self.startupAnimation = data.startupAnimation ~= false
 	self.startupDuration = tonumber(data.startupDuration) or 0.45
 
-	-- Client-configurable UI behavior.
 	self.uiScale = math.clamp(tonumber(data.uiScale or data.UIScale or data.scale or data.Scale) or 1, 0.55, 1.35)
 	self.autoResponsive = data.autoResponsive ~= false and data.AutoResponsive ~= false
 	self.sidebarCollapsed = data.sidebarCollapsed == true or data.SidebarCollapsed == true
@@ -946,7 +969,6 @@ function Library.new(data)
 		end
 	end
 
-	-- Main ScreenGui
 	local screenGui = create("ScreenGui", {
 		Name = self.title,
 		Parent = guiParent(),
@@ -954,7 +976,6 @@ function Library.new(data)
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 	})
 
-	-- Main Frame
 	local main = create("Frame", {
 		Name = "Main",
 		Parent = screenGui,
@@ -988,7 +1009,6 @@ function Library.new(data)
 	local mainStroke = stroke(main, self.theme.Stroke, 0.5, 1)
 	bindTheme(self, mainStroke, "Color", "Stroke")
 
-	-- Topbar
 	local topbar = create("Frame", {
 		Name = "Topbar",
 		Parent = main,
@@ -1008,7 +1028,6 @@ function Library.new(data)
 	bindTheme(self, accentLine, "BackgroundColor3", "Stroke")
 	accentLine.BackgroundTransparency = 0.5
 
-	-- Logo (text fallback or client-provided asset ID)
 	local logoBox = create("Frame", {
 		Parent = topbar,
 		Position = UDim2.fromOffset(12, 8),
@@ -1045,7 +1064,6 @@ function Library.new(data)
 	bindTheme(self, subtitleLabel, "TextColor3", "Muted")
 	subtitleLabel.TextTransparency = 0.5
 
-	-- Status badge
 	local status = create("Frame", {
 		Parent = topbar,
 		AnchorPoint = Vector2.new(1, 0.5),
@@ -1075,7 +1093,6 @@ function Library.new(data)
 	statusText.TextColor3 = self.theme.Muted
 	statusText.TextTransparency = 0.35
 
-	-- Minimize button
 	local minimize = create("TextButton", {
 		Parent = topbar,
 		AnchorPoint = Vector2.new(1, 0.5),
@@ -1090,7 +1107,6 @@ function Library.new(data)
 	bindTheme(self, minimize, "TextColor3", "Muted")
 	minimize.TextTransparency = 0.5
 
-	-- Sidebar
 	local sidebar = create("Frame", {
 		Name = "Sidebar",
 		Parent = main,
@@ -1117,7 +1133,6 @@ function Library.new(data)
 	bindTheme(self, navigationLabel, "TextColor3", "Muted")
 	navigationLabel.TextTransparency = 0.5
 
-	-- Sidebar collapse/expand button.
 	local sidebarCollapse = create("TextButton", {
 		Name = "SidebarCollapse",
 		Parent = sidebar,
@@ -1151,7 +1166,6 @@ function Library.new(data)
 	})
 	refreshCanvas(pageButtons, pageLayout, 10)
 
-	-- Divider above the local player profile card
 	local playerProfileDivider = create("Frame", {
 		Name = "PlayerProfileDivider",
 		Parent = sidebar,
@@ -1163,7 +1177,6 @@ function Library.new(data)
 	bindTheme(self, playerProfileDivider, "BackgroundColor3", "Stroke")
 	playerProfileDivider.BackgroundTransparency = 0.35
 
-	-- Local player profile card fixed at the bottom of the sidebar
 	local playerProfile = create("Frame", {
 		Name = "PlayerProfile",
 		Parent = sidebar,
@@ -1236,7 +1249,6 @@ function Library.new(data)
 		end
 	end)
 
-	-- Content area
 	local content = create("Frame", {
 		Name = "Content",
 		Parent = main,
@@ -1246,7 +1258,6 @@ function Library.new(data)
 		ClipsDescendants = true,
 	})
 
-	-- Content Header
 	local contentHeader = create("Frame", {
 		Name = "ContentHeader",
 		Parent = content,
@@ -1300,7 +1311,6 @@ function Library.new(data)
 		self:SetSidebarCollapsed(not self.sidebarCollapsed)
 	end)
 
-	-- Reflow automatically when the viewport changes.
 	local camera = workspace.CurrentCamera
 	if camera then
 		local viewportConnection = camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
@@ -1315,7 +1325,6 @@ function Library.new(data)
 		self:_applyResponsiveLayout()
 	end)
 
-	-- Smooth startup animation.
 	if self.startupAnimation then
 		local finalPosition = main.Position
 		local finalTransparency = main.BackgroundTransparency
@@ -1362,11 +1371,9 @@ function Library.new(data)
 		self:toggle()
 	end)
 
-
 	return self
 end
 
---// UI scale / responsive controls
 function Library:SetScale(value)
 	self.uiScale = math.clamp(tonumber(value) or self.uiScale or 1, 0.55, 1.35)
 	if self.startupScale then
@@ -1416,7 +1423,6 @@ function Library:SetSidebarCollapsed(state)
 		self.sidebarCollapseButton.Text = self.sidebarCollapsed and ">" or "<"
 	end
 
-	-- Icon-only sidebar in collapsed mode.
 	for _, page in ipairs(self.pages) do
 		if page.buttonTitle then
 			page.buttonTitle.Visible = not self.sidebarCollapsed
@@ -1474,7 +1480,7 @@ function Library:_applyResponsiveLayout()
 	self._mobileMode = mobile
 
 	if mobile then
-		-- Fit comfortably inside phone/tablet screens.
+
 		local width = math.max(320, viewport.X - 20)
 		local height = math.max(390, viewport.Y - 24)
 
@@ -1483,7 +1489,6 @@ function Library:_applyResponsiveLayout()
 		self.openSize = self.main.Size
 		self.openPosition = self.main.Position
 
-		-- Mobile defaults to icon-only sidebar.
 		self:SetSidebarCollapsed(true)
 	else
 		self.main.Size = UDim2.fromOffset(760, 500)
@@ -1588,7 +1593,6 @@ function Library:setSubtitle(subtitle)
 end
 Library.SetSubtitle = Library.setSubtitle
 
---// Dashboard header controls
 function Library:setDashboardTitle(title)
 	self.dashboardTitle = tostring(title or "")
 	if self.dashboardTitleLabel then
@@ -1735,7 +1739,6 @@ end
 function Library:Notify(data)
 	data = data or {}
 
-	-- Create one shared bottom-right container so notifications stack vertically.
 	if not self._notificationStack or not self._notificationStack.Parent then
 		local notificationStack = create("Frame", {
 			Name = "NotificationStack",
@@ -1874,7 +1877,7 @@ function Library:addPage(data)
 	page.library = self
 	page.title = tostring(data.title or data.Title or "PAGE")
 	page.sections = {}
-	page._columns = {} -- Track column containers
+	page._columns = {}
 
 	local button = create("TextButton", {
 		Parent = self.pagesContainer,
@@ -1958,7 +1961,6 @@ function Library:addPage(data)
 	bindTheme(self, title, "TextColor3", "Muted")
 	title.TextTransparency = 0.5
 
-	-- Create dual-column container for this page
 	local pageContainer = create("Frame", {
 		Name = "PageContainer",
 		Parent = self.content,
@@ -1968,7 +1970,6 @@ function Library:addPage(data)
 		Visible = false,
 	})
 
-	-- Left column
 	local leftColumn = create("ScrollingFrame", {
 		Name = "LeftColumn",
 		Parent = pageContainer,
@@ -1985,7 +1986,6 @@ function Library:addPage(data)
 	})
 	refreshCanvas(leftColumn, leftLayout, 8)
 
-	-- Right column
 	local rightColumn = create("ScrollingFrame", {
 		Name = "RightColumn",
 		Parent = pageContainer,
@@ -2018,7 +2018,6 @@ function Library:addPage(data)
 	self.pages[#self.pages + 1] = page
 	button.LayoutOrder = #self.pages
 
-	-- Match the current responsive/sidebar state for pages created after the window.
 	self:_applyPageLayout(page, self._mobileMode)
 	if self.sidebarCollapsed then
 		title.Visible = false
@@ -2125,16 +2124,14 @@ function Page:addSection(data)
 	section.library = self.library
 	section.title = tostring(data.title or data.Title or "SECTION")
 	section.modules = {}
-	
-	-- Determine column placement
-	local column = data.column or "left" -- "left" or "right"
+
+	local column = data.column or "left"
 	local columnContainer = self._columns[column]
-	
+
 	if not columnContainer then
-		columnContainer = self._columns["left"] -- fallback
+		columnContainer = self._columns["left"]
 	end
 
-	-- Create section card
 	local card = create("Frame", {
 		Parent = columnContainer,
 		Size = UDim2.new(1, -4, 0, 48),
@@ -2188,16 +2185,12 @@ function Page:addSection(data)
 	section.container = card
 	section.moduleContainer = moduleContainer
 	section.column = column
-	
+
 	self.sections[#self.sections + 1] = section
 
 	return section
 end
 Page.AddSection = Page.addSection
-
--- ============================================================
--- SECTION ELEMENTS (Boxed)
--- ============================================================
 
 function Section:addButton(data)
 	data = data or {}
@@ -2383,11 +2376,11 @@ function Section:addTextbox(data)
 	}
 
 	local collapsedHeight = 38
-	local expandedHeight = 116
 	local module = createBoxedModule(self, collapsedHeight)
 	module.ClipsDescendants = true
 
 	local title = createBoxedTitle(self, module, options.title, 170)
+	title.TextTruncate = Enum.TextTruncate.AtEnd
 
 	local holder = create("Frame", {
 		Parent = module,
@@ -2468,11 +2461,51 @@ function Section:addTextbox(data)
 		previewStats.TextTransparency = 0.3
 	end
 
+	local baseHeight = collapsedHeight
+	local previewVisible = false
+
+	local function refreshTextboxLayout()
+		local width = module.AbsoluteSize.X
+		if width <= 0 then return end
+
+		local stack = width < 330
+		if stack then
+			baseHeight = 68
+			title.Position = UDim2.fromOffset(12, 4)
+			title.Size = UDim2.new(1, -24, 0, 26)
+			holder.AnchorPoint = Vector2.new(0, 0)
+			holder.Position = UDim2.fromOffset(10, 34)
+			holder.Size = UDim2.new(1, -20, 0, 24)
+		else
+			baseHeight = collapsedHeight
+			local inputWidth = math.clamp(math.floor(width * 0.42), 112, 150)
+			title.Position = UDim2.fromOffset(12, 0)
+			title.Size = UDim2.new(1, -(inputWidth + 30), 1, 0)
+			holder.AnchorPoint = Vector2.new(1, 0)
+			holder.Position = UDim2.new(1, -10, 0, 7)
+			holder.Size = UDim2.fromOffset(inputWidth, 24)
+		end
+
+		if preview then
+			preview.Position = UDim2.fromOffset(10, baseHeight + 2)
+		end
+
+		module.Size = UDim2.new(
+			1, 0, 0,
+			previewVisible and (baseHeight + 78) or baseHeight
+		)
+	end
+
+	module:GetPropertyChangedSignal("AbsoluteSize"):Connect(refreshTextboxLayout)
+	task.defer(refreshTextboxLayout)
+
 	local function setPreviewVisible(visible)
 		if not preview then return end
+		previewVisible = visible
 		preview.Visible = visible
+		refreshTextboxLayout()
 		tween(module, 0.16, {
-			Size = UDim2.new(1, 0, 0, visible and expandedHeight or collapsedHeight),
+			Size = UDim2.new(1, 0, 0, visible and (baseHeight + 78) or baseHeight),
 		})
 	end
 
@@ -3151,7 +3184,6 @@ function Section:addDropdown(data)
 end
 Section.AddDropdown = Section.addDropdown
 
--- Multi-select dropdown. Callback receives an array of all selected values.
 function Section:addMultiDropdown(data)
 	data = data or {}
 
@@ -3435,7 +3467,6 @@ Section.AddMultiDropdown = Section.addMultiDropdown
 Section.addMultiSelectDropdown = Section.addMultiDropdown
 Section.AddMultiSelectDropdown = Section.addMultiDropdown
 
--- Adds a theme preset dropdown to whichever section the client chooses.
 function Section:addThemeSelector(data)
 	data = data or {}
 
@@ -3468,7 +3499,6 @@ Section.AddThemeSelector = Section.addThemeSelector
 Section.addTheme = Section.addThemeSelector
 Section.AddTheme = Section.addThemeSelector
 
-
 function Section:addColorPicker(data)
 	data = data or {}
 
@@ -3492,7 +3522,6 @@ function Section:addColorPicker(data)
 
 	local title = createBoxedTitle(self, header, options.title, 58)
 
-	-- Compact color box preview instead of the old long color preview.
 	local preview = create("Frame", {
 		Parent = header,
 		AnchorPoint = Vector2.new(1, 0.5),
@@ -3515,7 +3544,6 @@ function Section:addColorPicker(data)
 		Visible = false,
 	})
 
-	-- Preset color boxes.
 	local palette = {
 		Color3.fromRGB(255, 255, 255),
 		Color3.fromRGB(0, 0, 0),
@@ -3586,7 +3614,6 @@ function Section:addColorPicker(data)
 		end)
 	end
 
-	-- Transparency row.
 	local transparencyLabel = createLabel(
 		self.library,
 		panel,
@@ -3783,12 +3810,6 @@ function Section:addColorPicker(data)
 end
 Section.AddColorPicker = Section.addColorPicker
 
-
-
--- ============================================================
--- CUSTOM LABEL ELEMENT
--- Supports text-only labels, custom images, and Roblox avatars.
--- ============================================================
 function Section:addLabel(data)
 	data = data or {}
 
@@ -3830,10 +3851,12 @@ function Section:addLabel(data)
 	bindTheme(self.library, imageStroke, "Color", "Stroke")
 
 	local title = createLabel(self.library, module, options.title, 13, Enum.Font.GothamBold)
-	title.TextTruncate = Enum.TextTruncate.AtEnd
+	title.TextWrapped = true
+	title.TextTruncate = Enum.TextTruncate.None
 
 	local subtitle = createLabel(self.library, module, options.subtitle, 11, Enum.Font.Gotham)
-	subtitle.TextTruncate = Enum.TextTruncate.AtEnd
+	subtitle.TextWrapped = true
+	subtitle.TextTruncate = Enum.TextTruncate.None
 	bindTheme(self.library, subtitle, "TextColor3", "Muted")
 	subtitle.TextTransparency = 0.3
 
@@ -3846,10 +3869,18 @@ function Section:addLabel(data)
 		subtitle.TextXAlignment = alignment
 
 		if hasSubtitle then
-			title.Position = UDim2.fromOffset(textOffset, 10)
-			title.Size = UDim2.new(1, -(textOffset + 12), 0, 22)
-			subtitle.Position = UDim2.fromOffset(textOffset, 31)
-			subtitle.Size = UDim2.new(1, -(textOffset + 12), 0, 18)
+			local availableWidth = math.max(80, module.AbsoluteSize.X - textOffset - 12)
+			local titleBounds = TextService:GetTextSize(options.title, 13, Enum.Font.GothamBold, Vector2.new(availableWidth, 1000))
+			local subtitleBounds = TextService:GetTextSize(options.subtitle, 11, Enum.Font.Gotham, Vector2.new(availableWidth, 1000))
+			local titleHeight = math.max(22, titleBounds.Y + 4)
+			local subtitleHeight = math.max(18, subtitleBounds.Y + 4)
+			local neededHeight = math.max(options.height, 10 + titleHeight + subtitleHeight + 12)
+
+			module.Size = UDim2.new(1, 0, 0, neededHeight)
+			title.Position = UDim2.fromOffset(textOffset, 8)
+			title.Size = UDim2.new(1, -(textOffset + 12), 0, titleHeight)
+			subtitle.Position = UDim2.fromOffset(textOffset, 8 + titleHeight)
+			subtitle.Size = UDim2.new(1, -(textOffset + 12), 0, subtitleHeight)
 			subtitle.Visible = true
 		else
 			title.Position = UDim2.fromOffset(textOffset, 0)
@@ -3865,6 +3896,9 @@ function Section:addLabel(data)
 		options.userId = userId
 		imageHolder.Visible = true
 		refreshLayout()
+	module:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+		task.defer(refreshLayout)
+	end)
 		avatarRequest += 1
 		local requestId = avatarRequest
 		task.spawn(function()
@@ -3947,32 +3981,5 @@ function Section:addLabel(data)
 end
 
 Section.AddLabel = Section.addLabel
-
---[[
-CLIENT OPTIONS:
-local Window = Library:CreateWindow({
-	themePreset = "Black", -- Walled Waves, Black, Midnight, Crimson, Emerald, Violet, Snow
-	uiScale = 0.9,          -- 0.55 to 1.35
-	autoResponsive = true, -- automatically adapts for phones/tablets
-	sidebarCollapsed = false,
-	mobileBreakpoint = 700,
-})
-
-Window:SetScale(0.85)
-Window:SetSidebarCollapsed(true)
-Window:ToggleSidebar()
-Window:SetAutoResponsive(true)
-
-MULTI DROPDOWN:
-Section:AddMultiDropdown({
-	title = "Targets",
-	list = {"Players", "NPCs", "Objects"},
-	default = {"Players", "NPCs"},
-	max = 3, -- optional
-	callback = function(selectedValues, changedValue)
-		print(selectedValues, changedValue)
-	end,
-})
-]]
 
 return Library
