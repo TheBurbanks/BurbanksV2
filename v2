@@ -874,7 +874,7 @@ function Library.new(data)
 
 		local verifyButton = create("TextButton", {
 			Parent = keyCard, Position = UDim2.fromOffset(18, 162),
-			Size = self.keyGetUrl ~= "" and UDim2.new(0.62, -22, 0, 38) or UDim2.new(1, -36, 0, 38),
+			Size = self.keyGetUrl ~= "" and UDim2.new(0.5, -23, 0, 38) or UDim2.new(1, -36, 0, 38),
 			BorderSizePixel = 0, AutoButtonColor = false, Font = Enum.Font.GothamBold,
 			Text = self.keyButtonText, TextSize = 11, ZIndex = 302,
 		})
@@ -885,7 +885,7 @@ function Library.new(data)
 		if self.keyGetUrl ~= "" then
 			local getKeyButton = create("TextButton", {
 				Parent = keyCard, AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, -18, 0, 162), Size = UDim2.new(0.38, -4, 0, 38),
+				Position = UDim2.new(1, -18, 0, 162), Size = UDim2.new(0.5, -23, 0, 38),
 				BorderSizePixel = 0, AutoButtonColor = false, Font = Enum.Font.GothamBold,
 				Text = self.keyGetButtonText, TextSize = 11, ZIndex = 302,
 			})
