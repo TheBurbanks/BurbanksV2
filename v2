@@ -1032,10 +1032,11 @@ function Library.new(data)
 		Name = "LogoImage", Parent = logoBox,
 		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1,
-		Image = self.logoImageValue, ScaleType = Enum.ScaleType.Crop,
+		Image = self.logoImageValue, ScaleType = Enum.ScaleType.Stretch,
 		Visible = self.logoImageValue ~= "",
 	})
 	logoImage.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	corner(logoImage, 8)
 
 	local logoText = createLabel(self, logoBox, self.logoTextValue, 16, Enum.Font.GothamBold)
 	logoText.Size = UDim2.fromScale(1, 1)
