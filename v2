@@ -1379,7 +1379,58 @@ function Library:_applyPageLayout(page, mobile)
 	if not page or not page._columns then return end
 	local left = page._columns.left
 	local right = page._columns.right
-	if not left or not right then return end
+	local full = page._columns.full
+	if not left or not right or not full then return end
+
+	local sections = page.sections or {}
+	local sectionCount = #sections
+	local hasFull = false
+
+	for _, section in ipairs(sections) do
+		if section.column == "full" then
+			hasFull = true
+			break
+		end
+	end
+
+	if hasFull then
+		full.Visible = true
+		left.Visible = false
+		right.Visible = false
+
+		for _, section in ipairs(sections) do
+			if section.container and section.container.Parent ~= full then
+				section.container.Parent = full
+			end
+		end
+
+		full.Position = UDim2.fromOffset(0, 0)
+		full.Size = UDim2.new(1, 0, 1, 0)
+		return
+	end
+
+	full.Visible = false
+	left.Visible = true
+	right.Visible = true
+
+	if sectionCount <= 1 then
+		local onlySection = sections[1]
+		local onlyColumn = onlySection and onlySection.column or "left"
+
+		if onlyColumn == "right" then
+			left.Visible = false
+			right.Visible = true
+			right.Position = UDim2.fromOffset(0, 0)
+			right.Size = UDim2.new(1, 0, 1, 0)
+		else
+			left.Visible = true
+			right.Visible = false
+			left.Position = UDim2.fromOffset(0, 0)
+			left.Size = UDim2.new(1, 0, 1, 0)
+		end
+		return
+	end
+
 	if mobile then
 		left.Size = UDim2.new(1, 0, 0.5, -4)
 		left.Position = UDim2.fromOffset(0, 0)
@@ -1758,7 +1809,16 @@ function Library:addPage(data)
 	local rightLayout = create("UIListLayout", { Parent = rightColumn, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) })
 	refreshCanvas(rightColumn, rightLayout, 8)
 
-	page._columns = { left = leftColumn, right = rightColumn }
+	local fullColumn = create("ScrollingFrame", {
+		Name = "FullColumn", Parent = pageContainer,
+		Position = UDim2.fromOffset(0, 0), Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1, BorderSizePixel = 0, CanvasSize = UDim2.new(),
+		ScrollBarThickness = 0, Visible = false,
+	})
+	local fullLayout = create("UIListLayout", { Parent = fullColumn, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) })
+	refreshCanvas(fullColumn, fullLayout, 8)
+
+	page._columns = { left = leftColumn, right = rightColumn, full = fullColumn }
 	page.container = pageContainer
 	page.button = button
 	page.background = background
@@ -1853,8 +1913,9 @@ function Page:addSection(data)
 	section.title = tostring(data.title or data.Title or "SECTION")
 	section.modules = {}
 
-	local column = data.column or "left"
-	local columnContainer = self._columns[column] or self._columns["left"]
+	local requestedColumn = data.column or data.Column
+	local column = requestedColumn == "left" and "left" or requestedColumn == "right" and "right" or "full"
+	local columnContainer = self._columns[column]
 
 	local card = create("Frame", {
 		Parent = columnContainer,
@@ -1894,6 +1955,7 @@ function Page:addSection(data)
 	section.moduleContainer = moduleContainer
 	section.column = column
 	self.sections[#self.sections + 1] = section
+	self.library:_applyPageLayout(self, self.library._mobileMode)
 	return section
 end
 Page.AddSection = Page.addSection
