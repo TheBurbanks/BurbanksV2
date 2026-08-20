@@ -372,15 +372,27 @@ local THEME_PRESETS = {
 	},
 }
 
+local TEXT_SCALE = 1.16
+
 local function copyTable(source)
 	local result = {}
 	for key, value in pairs(source) do result[key] = value end
 	return result
 end
 
+local function scaledTextSize(value)
+	return math.max(1, math.floor((tonumber(value) or 12) * TEXT_SCALE + 0.5))
+end
+
 local function create(className, properties)
 	local object = Instance.new(className)
-	for property, value in pairs(properties or {}) do object[property] = value end
+	for property, value in pairs(properties or {}) do
+		if property == "TextSize" and typeof(value) == "number" then
+			object[property] = scaledTextSize(value)
+		else
+			object[property] = value
+		end
+	end
 	return object
 end
 
@@ -533,7 +545,7 @@ local function createLabel(window, parent, text, size, font)
 	local label = create("TextLabel", {
 		Parent = parent, BackgroundTransparency = 1,
 		Font = font or Enum.Font.Gotham, Text = text or "",
-		TextSize = (size or 12) + 1,
+		TextSize = size or 12,
 		TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center,
 	})
 	bindTheme(window, label, "TextColor3", "Text")
@@ -600,9 +612,10 @@ local function createInfoHint(section, parent, infoText, rightInset)
 
 	local function updateTooltip()
 		local maxWidth = 220
-		local firstPass = TextService:GetTextSize(tostring(infoText), 11, Enum.Font.Gotham, Vector2.new(maxWidth, 1000))
+		local measureSize = scaledTextSize(11)
+		local firstPass = TextService:GetTextSize(tostring(infoText), measureSize, Enum.Font.Gotham, Vector2.new(maxWidth, 1000))
 		local width = math.clamp(firstPass.X + 20, 120, maxWidth)
-		local bounds = TextService:GetTextSize(tostring(infoText), 11, Enum.Font.Gotham, Vector2.new(width - 16, 1000))
+		local bounds = TextService:GetTextSize(tostring(infoText), measureSize, Enum.Font.Gotham, Vector2.new(width - 16, 1000))
 		tooltip.Size = UDim2.fromOffset(width, bounds.Y + 14)
 		tooltipText.Size = UDim2.fromOffset(width - 16, bounds.Y + 2)
 		local iconPos = icon.AbsolutePosition
@@ -1141,8 +1154,8 @@ function Library.new(data)
 	bindTheme(self, playerProfile, "BackgroundColor3", "Card")
 	playerProfile.BackgroundTransparency = 0.45
 	corner(playerProfile, 9)
-	local playerProfileStroke = stroke(playerProfile, self.theme.Stroke, 0.5, 1)
-	bindTheme(self, playerProfileStroke, "Color", "Stroke")
+	local playerProfileStroke = stroke(playerProfile, self.theme.Accent, 0.5, 1)
+	bindTheme(self, playerProfileStroke, "Color", "Accent")
 
 	local avatarHolder = create("Frame", {
 		Parent = playerProfile, Position = UDim2.fromOffset(8, 8),
@@ -1158,12 +1171,12 @@ function Library.new(data)
 	})
 	corner(avatar, 21)
 
-	local usernameLabel = createLabel(self, playerProfile, "@" .. LocalPlayer.Name, 13, Enum.Font.GothamBold)
+	local usernameLabel = createLabel(self, playerProfile, LocalPlayer.DisplayName, 13, Enum.Font.GothamBold)
 	usernameLabel.Position = UDim2.fromOffset(58, 6)
 	usernameLabel.Size = UDim2.new(1, -66, 0, 23)
 	usernameLabel.TextTruncate = Enum.TextTruncate.AtEnd
 
-	local displayNameLabel = createLabel(self, playerProfile, LocalPlayer.DisplayName, 11, Enum.Font.GothamMedium)
+	local displayNameLabel = createLabel(self, playerProfile, LocalPlayer.Name, 11, Enum.Font.GothamMedium)
 	displayNameLabel.Position = UDim2.fromOffset(58, 29)
 	displayNameLabel.Size = UDim2.new(1, -66, 0, 20)
 	displayNameLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -1397,13 +1410,11 @@ function Library:_applyPageLayout(page, mobile)
 		full.Visible = true
 		left.Visible = false
 		right.Visible = false
-
 		for _, section in ipairs(sections) do
 			if section.container and section.container.Parent ~= full then
 				section.container.Parent = full
 			end
 		end
-
 		full.Position = UDim2.fromOffset(0, 0)
 		full.Size = UDim2.new(1, 0, 1, 0)
 		return
@@ -1416,7 +1427,6 @@ function Library:_applyPageLayout(page, mobile)
 	if sectionCount <= 1 then
 		local onlySection = sections[1]
 		local onlyColumn = onlySection and onlySection.column or "left"
-
 		if onlyColumn == "right" then
 			left.Visible = false
 			right.Visible = true
@@ -1687,7 +1697,7 @@ function Library:Notify(data)
 	bindTheme(self, text, "TextColor3", "Muted")
 	text.TextTransparency = 0.5
 
-	local measured = TextService:GetTextSize(text.Text, 14, Enum.Font.GothamMedium, Vector2.new(480, 80))
+	local measured = TextService:GetTextSize(text.Text, scaledTextSize(14), Enum.Font.GothamMedium, Vector2.new(480, 80))
 	local width = math.clamp(measured.X + 100, 430, 680)
 	tween(holder, 0.2, { Size = UDim2.fromOffset(width, 140) })
 
@@ -3069,8 +3079,8 @@ function Section:addLabel(data)
 		subtitle.TextXAlignment = alignment
 		if hasSubtitle then
 			local availableWidth = math.max(80, module.AbsoluteSize.X - textOffset - 12)
-			local titleBounds = TextService:GetTextSize(options.title, 13, Enum.Font.GothamBold, Vector2.new(availableWidth, 1000))
-			local subtitleBounds = TextService:GetTextSize(options.subtitle, 11, Enum.Font.Gotham, Vector2.new(availableWidth, 1000))
+			local titleBounds = TextService:GetTextSize(options.title, scaledTextSize(13), Enum.Font.GothamBold, Vector2.new(availableWidth, 1000))
+			local subtitleBounds = TextService:GetTextSize(options.subtitle, scaledTextSize(11), Enum.Font.Gotham, Vector2.new(availableWidth, 1000))
 			local titleHeight = math.max(22, titleBounds.Y + 4)
 			local subtitleHeight = math.max(18, subtitleBounds.Y + 4)
 			local neededHeight = math.max(options.height, 10 + titleHeight + subtitleHeight + 12)
