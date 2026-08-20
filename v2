@@ -1131,8 +1131,9 @@ function Library.new(data)
 	local pageButtons = create("ScrollingFrame", {
 		Parent = sidebar, Position = UDim2.fromOffset(10, 40),
 		Size = UDim2.new(1, -20, 1, -126), BackgroundTransparency = 1,
-		BorderSizePixel = 0, CanvasSize = UDim2.new(), ScrollBarThickness = 0,
+		BorderSizePixel = 0, CanvasSize = UDim2.new(), ScrollBarThickness = 3,
 	})
+	bindTheme(self, pageButtons, "ScrollBarImageColor3", "Accent")
 	local pageLayout = create("UIListLayout", {
 		Parent = pageButtons, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 5),
 	})
@@ -1806,16 +1807,18 @@ function Library:addPage(data)
 	local leftColumn = create("ScrollingFrame", {
 		Name = "LeftColumn", Parent = pageContainer,
 		Size = UDim2.new(0.5, -6, 1, 0), BackgroundTransparency = 1,
-		BorderSizePixel = 0, CanvasSize = UDim2.new(), ScrollBarThickness = 0,
+		BorderSizePixel = 0, CanvasSize = UDim2.new(), ScrollBarThickness = 3,
 	})
+	bindTheme(self, leftColumn, "ScrollBarImageColor3", "Accent")
 	local leftLayout = create("UIListLayout", { Parent = leftColumn, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) })
 	refreshCanvas(leftColumn, leftLayout, 8)
 
 	local rightColumn = create("ScrollingFrame", {
 		Name = "RightColumn", Parent = pageContainer,
 		Position = UDim2.new(0.5, 6, 0, 0), Size = UDim2.new(0.5, -6, 1, 0),
-		BackgroundTransparency = 1, BorderSizePixel = 0, CanvasSize = UDim2.new(), ScrollBarThickness = 0,
+		BackgroundTransparency = 1, BorderSizePixel = 0, CanvasSize = UDim2.new(), ScrollBarThickness = 3,
 	})
+	bindTheme(self, rightColumn, "ScrollBarImageColor3", "Accent")
 	local rightLayout = create("UIListLayout", { Parent = rightColumn, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) })
 	refreshCanvas(rightColumn, rightLayout, 8)
 
@@ -1823,8 +1826,9 @@ function Library:addPage(data)
 		Name = "FullColumn", Parent = pageContainer,
 		Position = UDim2.fromOffset(0, 0), Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1, BorderSizePixel = 0, CanvasSize = UDim2.new(),
-		ScrollBarThickness = 0, Visible = false,
+		ScrollBarThickness = 3, Visible = false,
 	})
+	bindTheme(self, fullColumn, "ScrollBarImageColor3", "Accent")
 	local fullLayout = create("UIListLayout", { Parent = fullColumn, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) })
 	refreshCanvas(fullColumn, fullLayout, 8)
 
@@ -2518,8 +2522,9 @@ function Section:addDropdown(data)
 	local list = create("ScrollingFrame", {
 		Parent = module, Position = UDim2.fromOffset(8, 72),
 		Size = UDim2.new(1, -16, 0, 100), BackgroundTransparency = 1,
-		BorderSizePixel = 0, CanvasSize = UDim2.new(), ScrollBarThickness = 0, Visible = false,
+		BorderSizePixel = 0, CanvasSize = UDim2.new(), ScrollBarThickness = 3, Visible = false,
 	})
+	bindTheme(self.library, list, "ScrollBarImageColor3", "Accent")
 	local layout = create("UIListLayout", { Parent = list, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) })
 	refreshCanvas(list, layout, 5)
 
@@ -2664,8 +2669,9 @@ function Section:addMultiDropdown(data)
 	local list = create("ScrollingFrame", {
 		Parent = module, Position = UDim2.fromOffset(8, 72),
 		Size = UDim2.new(1, -16, 0, 112), BackgroundTransparency = 1,
-		BorderSizePixel = 0, CanvasSize = UDim2.new(), ScrollBarThickness = 0, Visible = false,
+		BorderSizePixel = 0, CanvasSize = UDim2.new(), ScrollBarThickness = 3, Visible = false,
 	})
+	bindTheme(self.library, list, "ScrollBarImageColor3", "Accent")
 	local layout = create("UIListLayout", { Parent = list, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) })
 	refreshCanvas(list, layout, 5)
 
